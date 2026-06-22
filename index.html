@@ -361,7 +361,7 @@
                             <label class="text-sm font-semibold text-blue-500">⌁ Inductance (L)</label>
                             <span class="text-xs text-gray-400">mH</span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 mb-2">
                             <input type="range" id="sl_l" min="1" max="1000" step="1" value="150" class="flex-1 sl-blue"
                                 oninput="syncSlider('l')">
                             <input type="number" id="in_l" min="0.1" max="10000" step="0.1" value="150"
@@ -369,7 +369,10 @@
                                 oninput="syncInput('l')">
                             <span class="text-sm font-medium text-gray-500 w-8">mH</span>
                         </div>
-                        <div class="text-xs text-blue-400 mt-1 mono" id="xl_disp">X_L = 0.00 Ω</div>
+                        <div class="flex items-center justify-between bg-blue-50 px-3 py-1.5 rounded border border-blue-100">
+                            <span class="text-xs font-semibold text-blue-600">Reactance X_L (Ω)</span>
+                            <input type="number" id="in_xl" min="0" step="0.1" class="w-24 px-2 py-1 border border-blue-200 rounded text-sm mono text-right text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-400" oninput="syncXL()">
+                        </div>
                     </div>
                     <!-- C -->
                     <div class="param-group">
@@ -377,7 +380,7 @@
                             <label class="text-sm font-semibold text-green-500">⏚ Capacitance (C)</label>
                             <span class="text-xs text-gray-400">µF</span>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 mb-2">
                             <input type="range" id="sl_c" min="1" max="1000" step="1" value="100"
                                 class="flex-1 sl-green" oninput="syncSlider('c')">
                             <input type="number" id="in_c" min="0.1" max="10000" step="0.1" value="100"
@@ -385,7 +388,10 @@
                                 oninput="syncInput('c')">
                             <span class="text-sm font-medium text-gray-500 w-8">µF</span>
                         </div>
-                        <div class="text-xs text-green-400 mt-1 mono" id="xc_disp">X_C = 0.00 Ω</div>
+                        <div class="flex items-center justify-between bg-green-50 px-3 py-1.5 rounded border border-green-100">
+                            <span class="text-xs font-semibold text-green-600">Reactance X_C (Ω)</span>
+                            <input type="number" id="in_xc" min="0" step="0.1" class="w-24 px-2 py-1 border border-green-200 rounded text-sm mono text-right text-green-700 focus:outline-none focus:ring-1 focus:ring-green-400" oninput="syncXC()">
+                        </div>
                     </div>
                 </div>
 
@@ -837,54 +843,54 @@
             if (m === 'ohm') {
                 const I = CE.current(V, R1), P = CE.power_VI(V, I);
                 res = [
-                    { l: 'Voltage (V)', v: V.toFixed(2), u: 'V', c: 'amber' },
-                    { l: 'Current (I)', v: I.toFixed(4), u: 'A', c: 'blue' },
-                    { l: 'Resistance (R)', v: R1.toFixed(2), u: 'Ω', c: 'red' },
-                    { l: 'Power (P=VI)', v: P.toFixed(4), u: 'W', c: 'green' },
-                    { l: 'P = I²R', v: CE.power_I2R(I, R1).toFixed(4), u: 'W', c: 'green' },
-                    { l: 'P = V²/R', v: CE.power_V2R(V, R1).toFixed(4), u: 'W', c: 'green' },
-                    { l: 'Conductance G', v: (R1 > 0 ? (1 / R1).toFixed(6) : '0'), u: 'S', c: 'purple' },
-                    { l: 'Energy (1s)', v: P.toFixed(4), u: 'J', c: 'indigo' }
+                    { l: 'Voltage (V)', v: V.toFixed(2), u: 'V', c: 'amber', f: 'V = I × R' },
+                    { l: 'Current (I)', v: I.toFixed(4), u: 'A', c: 'blue', f: 'I = V / R' },
+                    { l: 'Resistance (R)', v: R1.toFixed(2), u: 'Ω', c: 'red', f: 'R = V / I' },
+                    { l: 'Power (P=VI)', v: P.toFixed(4), u: 'W', c: 'green', f: 'P = V × I' },
+                    { l: 'P = I²R', v: CE.power_I2R(I, R1).toFixed(4), u: 'W', c: 'green', f: 'P = I² × R' },
+                    { l: 'P = V²/R', v: CE.power_V2R(V, R1).toFixed(4), u: 'W', c: 'green', f: 'P = V² / R' },
+                    { l: 'Conductance G', v: (R1 > 0 ? (1 / R1).toFixed(6) : '0'), u: 'S', c: 'purple', f: 'G = 1 / R' },
+                    { l: 'Energy (1s)', v: P.toFixed(4), u: 'J', c: 'indigo', f: 'W = P × t' }
                 ];
             } else if (m === 'series_dc') {
                 const Req = CE.seriesR([R1, R2, R3]), I = CE.current(V, Req), P = CE.power_VI(V, I);
                 const V1 = CE.voltage(I, R1), V2 = CE.voltage(I, R2), V3 = CE.voltage(I, R3);
                 res = [
-                    { l: 'R_eq (Series)', v: Req.toFixed(2), u: 'Ω', c: 'red' },
-                    { l: 'I_total', v: I.toFixed(4), u: 'A', c: 'blue' },
-                    { l: 'V₁ = IR₁', v: V1.toFixed(2), u: 'V', c: 'amber' },
-                    { l: 'V₂ = IR₂', v: V2.toFixed(2), u: 'V', c: 'amber' },
-                    { l: 'V₃ = IR₃', v: V3.toFixed(2), u: 'V', c: 'amber' },
-                    { l: 'P_total', v: P.toFixed(4), u: 'W', c: 'green' },
-                    { l: 'P₁ = I²R₁', v: CE.power_I2R(I, R1).toFixed(4), u: 'W', c: 'green' },
-                    { l: 'P₂ = I²R₂', v: CE.power_I2R(I, R2).toFixed(4), u: 'W', c: 'green' }
+                    { l: 'R_eq (Series)', v: Req.toFixed(2), u: 'Ω', c: 'red', f: 'R_eq = R₁ + R₂ + R₃' },
+                    { l: 'I_total', v: I.toFixed(4), u: 'A', c: 'blue', f: 'I_t = V / R_eq' },
+                    { l: 'V₁ = IR₁', v: V1.toFixed(2), u: 'V', c: 'amber', f: 'V₁ = I_t × R₁' },
+                    { l: 'V₂ = IR₂', v: V2.toFixed(2), u: 'V', c: 'amber', f: 'V₂ = I_t × R₂' },
+                    { l: 'V₃ = IR₃', v: V3.toFixed(2), u: 'V', c: 'amber', f: 'V₃ = I_t × R₃' },
+                    { l: 'P_total', v: P.toFixed(4), u: 'W', c: 'green', f: 'P_t = V × I_t' },
+                    { l: 'P₁ = I²R₁', v: CE.power_I2R(I, R1).toFixed(4), u: 'W', c: 'green', f: 'P₁ = I_t² × R₁' },
+                    { l: 'P₂ = I²R₂', v: CE.power_I2R(I, R2).toFixed(4), u: 'W', c: 'green', f: 'P₂ = I_t² × R₂' }
                 ];
             } else if (m === 'parallel_dc') {
                 const Req = CE.parallelR([R1, R2, R3]), It = CE.current(V, Req);
                 const I1 = CE.current(V, R1), I2 = CE.current(V, R2), I3 = CE.current(V, R3);
                 const nt = CE.thev2nort(V, Req);
                 res = [
-                    { l: 'R_eq (Parallel)', v: Req.toFixed(2), u: 'Ω', c: 'red' },
-                    { l: 'I_total', v: It.toFixed(4), u: 'A', c: 'blue' },
-                    { l: 'I₁ = V/R₁', v: I1.toFixed(4), u: 'A', c: 'blue' },
-                    { l: 'I₂ = V/R₂', v: I2.toFixed(4), u: 'A', c: 'blue' },
-                    { l: 'I₃ = V/R₃', v: I3.toFixed(4), u: 'A', c: 'blue' },
-                    { l: 'P_total', v: CE.power_VI(V, It).toFixed(4), u: 'W', c: 'green' },
-                    { l: 'Thevenin V_th', v: V.toFixed(2), u: 'V', c: 'purple', s: 'Norton I_N = ' + nt.IN.toFixed(4) + ' A' },
-                    { l: 'Thevenin R_th', v: Req.toFixed(2), u: 'Ω', c: 'purple' }
+                    { l: 'R_eq (Parallel)', v: Req.toFixed(2), u: 'Ω', c: 'red', f: '1/R_eq = 1/R₁ + 1/R₂ + 1/R₃' },
+                    { l: 'I_total', v: It.toFixed(4), u: 'A', c: 'blue', f: 'I_t = V / R_eq' },
+                    { l: 'I₁ = V/R₁', v: I1.toFixed(4), u: 'A', c: 'blue', f: 'I₁ = V / R₁' },
+                    { l: 'I₂ = V/R₂', v: I2.toFixed(4), u: 'A', c: 'blue', f: 'I₂ = V / R₂' },
+                    { l: 'I₃ = V/R₃', v: I3.toFixed(4), u: 'A', c: 'blue', f: 'I₃ = V / R₃' },
+                    { l: 'P_total', v: CE.power_VI(V, It).toFixed(4), u: 'W', c: 'green', f: 'P_t = V × I_t' },
+                    { l: 'Thevenin V_th', v: V.toFixed(2), u: 'V', c: 'purple', s: 'Norton I_N = ' + nt.IN.toFixed(4) + ' A', f: 'V_th = V_oc' },
+                    { l: 'Thevenin R_th', v: Req.toFixed(2), u: 'Ω', c: 'purple', f: 'R_th = R_eq' }
                 ];
             } else if (m === 'star_delta') {
                 drawSD();
                 const Ra = +document.getElementById('sd_ra').value || 0, Rb = +document.getElementById('sd_rb').value || 0, Rc = +document.getElementById('sd_rc').value || 0;
                 const s1 = +document.getElementById('sd_r1').value || 0, s2 = +document.getElementById('sd_r2').value || 0, s3 = +document.getElementById('sd_r3').value || 0;
                 res = [
-                    { l: '△ Ra', v: Ra.toFixed(2), u: 'Ω', c: 'blue' },
-                    { l: '△ Rb', v: Rb.toFixed(2), u: 'Ω', c: 'blue' },
-                    { l: '△ Rc', v: Rc.toFixed(2), u: 'Ω', c: 'blue' },
+                    { l: '△ Ra', v: Ra.toFixed(2), u: 'Ω', c: 'blue', f: 'Ra = (R₁R₂ + R₂R₃ + R₃R₁) / R₁' },
+                    { l: '△ Rb', v: Rb.toFixed(2), u: 'Ω', c: 'blue', f: 'Rb = (R₁R₂ + R₂R₃ + R₃R₁) / R₂' },
+                    { l: '△ Rc', v: Rc.toFixed(2), u: 'Ω', c: 'blue', f: 'Rc = (R₁R₂ + R₂R₃ + R₃R₁) / R₃' },
                     { l: '', v: '', u: '', c: 'gray' },
-                    { l: 'Y R1', v: s1.toFixed(2), u: 'Ω', c: 'green' },
-                    { l: 'Y R2', v: s2.toFixed(2), u: 'Ω', c: 'green' },
-                    { l: 'Y R3', v: s3.toFixed(2), u: 'Ω', c: 'green' }
+                    { l: 'Y R1', v: s1.toFixed(2), u: 'Ω', c: 'green', f: 'R₁ = (Rb × Rc) / (Ra+Rb+Rc)' },
+                    { l: 'Y R2', v: s2.toFixed(2), u: 'Ω', c: 'green', f: 'R₂ = (Rc × Ra) / (Ra+Rb+Rc)' },
+                    { l: 'Y R3', v: s3.toFixed(2), u: 'Ω', c: 'green', f: 'R₃ = (Ra × Rb) / (Ra+Rb+Rc)' }
                 ];
             }
             renderCards('dc-grid', res);
@@ -939,18 +945,18 @@
             else { sState = 'Leading (Capacitive)'; sCol = 'green'; }
 
             const res = [
-                { l: '|Z| Impedance', v: Zc.mag().toFixed(2), u: 'Ω', c: 'indigo', s: Zc.str() + ' Ω' },
-                { l: 'Phase θ', v: pDeg.toFixed(2), u: '°', c: sCol, s: sState },
-                { l: 'I_peak', v: Ip.toFixed(4), u: 'A', c: 'blue' },
-                { l: 'I_rms', v: Irms.toFixed(4), u: 'A', c: 'blue' },
-                { l: '|Y| Admittance', v: Yc.mag().toFixed(6), u: 'S', c: 'purple', s: Yc.str(4) + ' S' },
-                { l: 'Power Factor', v: pf.toFixed(4), u: '', c: sCol },
-                { l: 'P (Real)', v: Pw.toFixed(2), u: 'W', c: 'green' },
-                { l: 'Q (Reactive)', v: Qv.toFixed(2), u: 'VAR', c: 'amber' },
-                { l: 'S (Apparent)', v: S.toFixed(2), u: 'VA', c: 'red' },
-                { l: 'X_L', v: xl.toFixed(2), u: 'Ω', c: 'blue' },
-                { l: 'X_C', v: xc.toFixed(2), u: 'Ω', c: 'green' },
-                { l: 'V_rms', v: Vrms.toFixed(2), u: 'V', c: 'amber' }
+                { l: '|Z| Impedance', v: Zc.mag().toFixed(2), u: 'Ω', c: 'indigo', s: Zc.str() + ' Ω', f: mode === 'series_ac' ? '|Z| = √(R² + (X_L - X_C)²)' : '|Z| = 1 / |Y|' },
+                { l: 'Phase θ', v: pDeg.toFixed(2), u: '°', c: sCol, s: sState, f: 'θ = arctan(X_eq / R_eq)' },
+                { l: 'I_peak', v: Ip.toFixed(4), u: 'A', c: 'blue', f: 'I_p = V_p / |Z|' },
+                { l: 'I_rms', v: Irms.toFixed(4), u: 'A', c: 'blue', f: 'I_rms = I_p / √2' },
+                { l: '|Y| Admittance', v: Yc.mag().toFixed(6), u: 'S', c: 'purple', s: Yc.str(4) + ' S', f: '|Y| = 1 / |Z|' },
+                { l: 'Power Factor', v: pf.toFixed(4), u: '', c: sCol, f: 'PF = cos(θ)' },
+                { l: 'P (Real)', v: Pw.toFixed(2), u: 'W', c: 'green', f: 'P = S × cos(θ)' },
+                { l: 'Q (Reactive)', v: Qv.toFixed(2), u: 'VAR', c: 'amber', f: 'Q = S × sin(θ)' },
+                { l: 'S (Apparent)', v: S.toFixed(2), u: 'VA', c: 'red', f: 'S = V_rms × I_rms' },
+                { l: 'X_L', v: xl.toFixed(2), u: 'Ω', c: 'blue', f: 'X_L = 2πfL' },
+                { l: 'X_C', v: xc.toFixed(2), u: 'Ω', c: 'green', f: 'X_C = 1 / (2πfC)' },
+                { l: 'V_rms', v: Vrms.toFixed(2), u: 'V', c: 'amber', f: 'V_rms = V_p / √2' }
             ];
 
             renderCards('ac-grid', res);
@@ -977,14 +983,14 @@
             const I0 = V / R;
 
             const res = [
-                { l: 'Resonant Freq (f₀)', v: f0.toFixed(2), u: 'Hz', c: 'amber' },
-                { l: 'Quality Factor (Q)', v: Q.toFixed(2), u: '', c: 'indigo' },
-                { l: 'Bandwidth (BW)', v: BW.toFixed(2), u: 'Hz', c: 'blue' },
-                { l: 'Current at f₀ (I₀)', v: I0.toFixed(4), u: 'A', c: 'green' },
-                { l: 'Impedance at f₀', v: R.toFixed(2), u: 'Ω', c: 'red' },
-                { l: 'X_L = X_C at f₀', v: xl0.toFixed(2), u: 'Ω', c: 'purple' },
-                { l: 'Lower Cutoff (f_L)', v: Math.max(0, fl).toFixed(2), u: 'Hz', c: 'gray' },
-                { l: 'Upper Cutoff (f_H)', v: fh.toFixed(2), u: 'Hz', c: 'gray' }
+                { l: 'Resonant Freq (f₀)', v: f0.toFixed(2), u: 'Hz', c: 'amber', f: 'f₀ = 1 / (2π√(LC))' },
+                { l: 'Quality Factor (Q)', v: Q.toFixed(2), u: '', c: 'indigo', f: 'Q = (1/R)√(L/C)' },
+                { l: 'Bandwidth (BW)', v: BW.toFixed(2), u: 'Hz', c: 'blue', f: 'BW = f₀ / Q' },
+                { l: 'Current at f₀ (I₀)', v: I0.toFixed(4), u: 'A', c: 'green', f: 'I₀ = V / R' },
+                { l: 'Impedance at f₀', v: R.toFixed(2), u: 'Ω', c: 'red', f: 'Z = R (at Resonance)' },
+                { l: 'X_L = X_C at f₀', v: xl0.toFixed(2), u: 'Ω', c: 'purple', f: 'X_L = X_C = 2πf₀L' },
+                { l: 'Lower Cutoff (f_L)', v: Math.max(0, fl).toFixed(2), u: 'Hz', c: 'gray', f: 'f_L = f₀ - BW/2' },
+                { l: 'Upper Cutoff (f_H)', v: fh.toFixed(2), u: 'Hz', c: 'gray', f: 'f_H = f₀ + BW/2' }
             ];
 
             renderCards('res-grid', res);
@@ -1007,10 +1013,12 @@
 
         function renderCards(id, arr) {
             document.getElementById(id).innerHTML = arr.filter(r => r.l).map(r => `
-            <div class="rounded-lg border p-3 ${CM[r.c] || CM.gray} transition-all hover:shadow-md">
+            <div class="group relative rounded-lg border p-3 ${CM[r.c] || CM.gray} transition-all hover:shadow-md ${r.f ? 'cursor-pointer' : ''}" ${r.f ? `onclick="const f = this.querySelector('.f-view'); if(f) f.classList.toggle('hidden');"` : ''}>
                 <div class="text-xs font-medium opacity-70 mb-1">${r.l}</div>
                 <div class="text-lg font-bold mono">${r.v} <span class="text-sm font-normal">${r.u}</span></div>
                 ${r.s ? `<div class="text-[10px] mono opacity-60 mt-0.5">${r.s}</div>` : ''}
+                ${r.f ? `<div class="f-view hidden mt-2 pt-2 border-t border-current/20 text-[11px] font-mono opacity-90">${r.f}</div>` : ''}
+                ${r.f ? `<div class="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity" title="Click to view formula"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>` : ''}
             </div>`).join('');
         }
 
@@ -1173,6 +1181,7 @@
             const b = document.getElementById('btn_anim');
             b.textContent = ST.anim ? '⏸ Pause' : '▶ Play';
             b.className = `px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${ST.anim ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`;
+            if (!ST.anim && ST.src === 'ac' && ST.cir !== 'resonance') updateWave();
         }
 
         function animLoop() {
