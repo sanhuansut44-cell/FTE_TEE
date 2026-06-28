@@ -108,22 +108,7 @@
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Resonance Pulse */
-        @keyframes resPulse {
 
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
-            }
-
-            50% {
-                box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
-            }
-        }
-
-        .res-glow {
-            animation: resPulse 1.5s infinite;
-        }
 
         /* ── Enhanced Number Input ── */
         input[type="number"] {
@@ -217,9 +202,6 @@
                         <button
                             class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="parallel_ac" onclick="setCircuitMode('parallel_ac')">Parallel RLC</button>
-                        <button
-                            class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
-                            data-mode="resonance" onclick="setCircuitMode('resonance')">🔔 Resonance</button>
                     </div>
                 </div>
 
@@ -500,31 +482,6 @@
                         <p id="phasor_desc" class="text-xs text-gray-500 mb-3 text-center">Impedance Triangle: Z = R + jX (Ω)</p>
                         <div class="flex justify-center"><canvas id="phasorCanvas" width="400" height="400"
                                 class="max-w-full"></canvas></div>
-                    </div>
-                </div>
-
-                <!-- Resonance Results -->
-                <div id="res-out" class="space-y-4 hidden">
-                    <!-- Results Grid -->
-                    <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
-                        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span
-                                class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-base">🔔</span>
-                            Resonance Analysis
-                        </h2>
-                        <div id="res-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
-                    </div>
-
-                    <!-- Frequency Response Chart -->
-                    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                        <div class="flex flex-wrap items-center justify-between p-4 border-b border-gray-100 gap-2">
-                            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <span
-                                    class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-base">📉</span>
-                                Frequency Response (|Z| &amp; |I| vs Frequency)
-                            </h2>
-                        </div>
-                        <div class="p-4 relative" style="height:360px;"><canvas id="resChart"></canvas></div>
                     </div>
                 </div>
 
@@ -810,7 +767,7 @@
             document.getElementById('ac-params').classList.toggle('hidden', m !== 'ac');
             document.getElementById('dc-out').classList.toggle('hidden', m !== 'dc');
             document.getElementById('ac-out').classList.toggle('hidden', m !== 'ac');
-            document.getElementById('res-out').classList.add('hidden');
+
             document.getElementById('sd-params').classList.add('hidden');
             // BUG12 FIX: Initialise XL/XC display fields when first switching to AC
             if (m === 'ac') syncXfromLC();
@@ -829,16 +786,10 @@
 
             if (ST.src === 'dc') document.getElementById('dc-params').classList.toggle('hidden', m === 'star_delta');
 
-            // Resonance mode: show resonance results, hide AC results
+            // Force Chart.js to resize after becoming visible
             if (ST.src === 'ac') {
-                const isRes = m === 'resonance';
-                document.getElementById('ac-out').classList.toggle('hidden', isRes);
-                document.getElementById('res-out').classList.toggle('hidden', !isRes);
-
-                // Force Chart.js to resize after becoming visible
                 setTimeout(() => {
-                    if (isRes && typeof resChart !== 'undefined' && resChart) { resChart.resize(); resChart.update(); }
-                    if (!isRes && typeof oscChart !== 'undefined' && oscChart) { oscChart.resize(); oscChart.update(); }
+                    if (typeof oscChart !== 'undefined' && oscChart) { oscChart.resize(); oscChart.update(); }
                 }, 10);
             }
             updateAll();
@@ -934,7 +885,7 @@
         // ╚══════════════════════════════════════════════════════════════╝
         function updateAll() {
             if (ST.src === 'dc') updateDC();
-            else if (ST.cir === 'resonance') updateResonance();
+
             else updateAC();
         }
 
@@ -1069,40 +1020,7 @@
             ST.wave = { V, f, w, R, xl, xc, Ip, pRad, IR, IL, IC, mode: pMode };
         }
 
-        // ──── Resonance Update ─────────────────────────────────────────
-        function updateResonance() {
-            const V = gv('v_ac'), R = gv('r_ac') || 0.1;
-            const L = gv('l') / 1000 || 1e-6, C = gv('c') / 1e6 || 1e-9;
 
-            const f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
-            const w0 = 2 * Math.PI * f0;
-            const xl0 = w0 * L;
-            const xc0 = 1 / (w0 * C);
-
-            const Q = (1 / R) * Math.sqrt(L / C);
-            const BW = f0 / Q;
-            const fl = f0 - BW / 2;
-            const fh = f0 + BW / 2;
-            const I0 = V / R;
-
-            const res = [
-                { l: 'Resonant Freq (f₀)', v: f0.toFixed(2), u: 'Hz', c: 'amber', f: 'f₀ = 1 / (2π√(LC))' },
-                { l: 'Quality Factor (Q)', v: Q.toFixed(2), u: '', c: 'indigo', f: 'Q = (1/R)√(L/C)' },
-                { l: 'Bandwidth (BW)', v: BW.toFixed(2), u: 'Hz', c: 'blue', f: 'BW = f₀ / Q' },
-                { l: 'Current at f₀ (I₀)', v: I0.toFixed(4), u: 'A', c: 'green', f: 'I₀ = V / R' },
-                { l: 'Impedance at f₀', v: R.toFixed(2), u: 'Ω', c: 'red', f: 'Z = R (at Resonance)' },
-                { l: 'X_L = X_C at f₀', v: xl0.toFixed(2), u: 'Ω', c: 'purple', f: 'X_L = X_C = 2πf₀L' },
-                { l: 'Lower Cutoff (f_L)', v: Math.max(0, fl).toFixed(2), u: 'Hz', c: 'gray', f: 'f_L = f₀ - BW/2' },
-                { l: 'Upper Cutoff (f_H)', v: fh.toFixed(2), u: 'Hz', c: 'gray', f: 'f_H = f₀ + BW/2' }
-            ];
-
-            renderCards('res-grid', res);
-            updateResChart(f0, R, L, C, BW);
-
-            // Update Quick Results
-            const Zc = new Complex(R, 0);
-            renderQuickAC(Zc, 0, I0, 'Resonance (Resistive)', 'amber');
-        }
 
         // ╔══════════════════════════════════════════════════════════════╗
         // ║  Renderers                                                  ║
@@ -1139,7 +1057,7 @@
 
         function renderQuickAC(Z, deg, Ip, state, col) {
             const el = document.getElementById('quick-res');
-            const cls = col === 'amber' ? 'bg-amber-100 text-amber-700 res-glow' : col === 'blue' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700';
+            const cls = col === 'blue' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700';
             el.innerHTML = `
             <div class="flex justify-between"><span class="text-gray-500">|Z|</span><span class="mono font-bold text-indigo-600">${Z.mag().toFixed(2)} Ω</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Z</span><span class="mono font-bold text-indigo-500 text-xs">${Z.str()}</span></div>
@@ -1162,7 +1080,7 @@
         // ╔══════════════════════════════════════════════════════════════╗
         // ║  Oscilloscope (Animated Waveform via Chart.js)               ║
         // ╚══════════════════════════════════════════════════════════════╝
-        let oscChart, resChart;
+        let oscChart;
 
         function initChart() {
             const ctx = document.getElementById('oscChart').getContext('2d');
@@ -1188,59 +1106,7 @@
             });
         }
 
-        function initResChart() {
-            const ctx = document.getElementById('resChart');
-            if (!ctx) return;
-            resChart = new Chart(ctx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: [], datasets: [
-                        { label: 'Impedance |Z| (Ω)', data: [], borderColor: 'rgba(245,158,11,1)', backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true },
-                        { label: 'Current |I| (A)', data: [], borderColor: 'rgba(59,130,246,1)', borderWidth: 2, pointRadius: 0, tension: 0.4, yAxisID: 'yI' }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
-                    interaction: { mode: 'index', intersect: false },
-                    scales: {
-                        x: { title: { display: true, text: 'Frequency (Hz)', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 10 } },
-                        y: { title: { display: true, text: '|Z| (Ω)', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } },
-                        yI: { position: 'right', title: { display: true, text: '|I| (A)', font: { family: 'Inter', size: 11 } }, grid: { drawOnChartArea: false }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } }
-                    },
-                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}` } } }
-                }
-            });
-        }
 
-        function updateResChart(f0, R, L, C, BW) {
-            if (!resChart) return;
-            const pts = 200;
-            // FIX: For high-Q circuits BW can be tiny, making the chart look flat.
-            // Use at least ±50 % of f0 so the curve is always visible.
-            const minSpan = f0 * 1.0;          // minimum window = 100% of f0
-            const span = Math.max(BW * 8, minSpan);
-            const f_min = Math.max(1, f0 - span / 2);
-            const f_max = f0 + span / 2;
-            const df = (f_max - f_min) / pts;
-
-            const freqs = [], Zs = [], Is = [];
-            const V = gv('v_ac');
-
-            for (let i = 0; i <= pts; i++) {
-                const f = f_min + i * df;
-                freqs.push(f.toFixed(1));
-                const xl = 2 * Math.PI * f * L;
-                const xc = 1 / (2 * Math.PI * f * C);
-                const Z = Math.sqrt(R * R + Math.pow(xl - xc, 2));
-                Zs.push(Z);
-                Is.push(V / Z);
-            }
-
-            resChart.data.labels = freqs;
-            resChart.data.datasets[0].data = Zs;
-            resChart.data.datasets[1].data = Is;
-            resChart.update();
-        }
 
         function updateWave() {
             if (!ST.wave || !oscChart) return;
@@ -1290,11 +1156,11 @@
             const b = document.getElementById('btn_anim');
             b.textContent = ST.anim ? '⏸ Pause' : '▶ Play';
             b.className = `px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${ST.anim ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`;
-            if (!ST.anim && ST.src === 'ac' && ST.cir !== 'resonance') updateWave();
+            if (!ST.anim && ST.src === 'ac') updateWave();
         }
 
         function animLoop() {
-            if (ST.anim && ST.src === 'ac' && ST.cir !== 'resonance') {
+            if (ST.anim && ST.src === 'ac') {
                 ST.phase += 0.03;
                 if (ST.phase > 2 * Math.PI) ST.phase -= 2 * Math.PI;
                 updateWave();
@@ -1303,17 +1169,11 @@
         }
 
         function exportChart() {
-            // FIX: Export whichever chart is currently visible (oscilloscope or
-            // frequency-response), not always oscChart.
-            const isResonance = ST.cir === 'resonance';
-            const activeChart = isResonance ? resChart : oscChart;
-            const canvasId = isResonance ? 'resChart' : 'oscChart';
-            const fileName = isResonance ? 'frequency_response.png' : 'waveform.png';
-            if (!activeChart) return;
-            const cv = document.getElementById(canvasId);
+            if (!oscChart) return;
+            const cv = document.getElementById('oscChart');
             const tc = document.createElement('canvas'); tc.width = cv.width; tc.height = cv.height;
             const tx = tc.getContext('2d'); tx.fillStyle = '#fff'; tx.fillRect(0, 0, tc.width, tc.height); tx.drawImage(cv, 0, 0);
-            const a = document.createElement('a'); a.download = fileName; a.href = tc.toDataURL('image/png'); a.click();
+            const a = document.createElement('a'); a.download = 'waveform.png'; a.href = tc.toDataURL('image/png'); a.click();
         }
 
         // ╔══════════════════════════════════════════════════════════════╗
@@ -1566,7 +1426,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             initChart();
-            initResChart();
+
             calcSD('delta');
             setSourceMode('dc');
             enhanceNumberInputs();
