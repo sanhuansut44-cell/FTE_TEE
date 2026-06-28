@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
         content="ห้องปฏิบัติการเสมือนจริง สำหรับวิเคราะห์วงจรไฟฟ้ากระแสตรง (DC) และกระแสสลับ (AC) แบบ Interactive">
-    <title>Interactive Virtual Lab for DC/AC Circuits</title>
+    <title>Interactive Virtual Lab for DC/AC Circuits v4.0</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -125,11 +125,30 @@
             animation: resPulse 1.5s infinite;
         }
 
-        /* Number input */
+        /* ── Enhanced Number Input ── */
+        input[type="number"] {
+            cursor: ew-resize;          /* hint: draggable */
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+            user-select: none;
+        }
+        input[type="number"]:not(:focus):hover {
+            background: #eef2ff !important;
+            border-color: #818cf8 !important;
+            box-shadow: 0 0 0 2px rgba(129,140,248,0.25);
+        }
+        input[type="number"]:focus {
+            cursor: text;
+            user-select: text;
+        }
+        /* Hide spin buttons — use scroll/drag instead */
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
-            opacity: 1;
+            -webkit-appearance: none;
+            margin: 0;
         }
+        input[type="number"] { -moz-appearance: textfield; }
+        /* Drag-active state */
+        body.num-dragging { cursor: ew-resize !important; user-select: none !important; }
     </style>
 </head>
 
@@ -191,13 +210,16 @@
                             class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="star_delta" onclick="setCircuitMode('star_delta')">Star‑Delta</button>
                     </div>
-                    <div id="ac-tabs" class="hidden flex flex-wrap gap-2">
+                    <div id="ac-tabs" class="flex flex-wrap gap-2 hidden">
                         <button
                             class="tab-btn active px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="series_ac" onclick="setCircuitMode('series_ac')">Series RLC</button>
                         <button
                             class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="parallel_ac" onclick="setCircuitMode('parallel_ac')">Parallel RLC</button>
+                        <button
+                            class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                            data-mode="resonance" onclick="setCircuitMode('resonance')">🔔 Resonance</button>
                     </div>
                 </div>
 
@@ -227,9 +249,9 @@
                             <span class="text-xs text-gray-400">Ohms</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r1" min="1" max="10000" step="1" value="100"
+                            <input type="range" id="sl_r1" min="0" max="1000" step="1" value="100"
                                 class="flex-1 sl-red" oninput="syncSlider('r1')">
-                            <input type="number" id="in_r1" min="0.1" max="100000" step="0.1" value="100"
+                            <input type="number" id="in_r1" min="0" max="100000" step="0.1" value="100"
                                 class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
                                 oninput="syncInput('r1')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
@@ -241,9 +263,9 @@
                             <label class="text-sm font-semibold text-red-400">Ω Resistance (R₂)</label>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r2" min="1" max="10000" step="1" value="200"
+                            <input type="range" id="sl_r2" min="0" max="1000" step="1" value="200"
                                 class="flex-1 sl-red" oninput="syncSlider('r2')">
-                            <input type="number" id="in_r2" min="0.1" max="100000" step="0.1" value="200"
+                            <input type="number" id="in_r2" min="0" max="100000" step="0.1" value="200"
                                 class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
                                 oninput="syncInput('r2')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
@@ -255,9 +277,9 @@
                             <label class="text-sm font-semibold text-red-300">Ω Resistance (R₃)</label>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r3" min="1" max="10000" step="1" value="300"
+                            <input type="range" id="sl_r3" min="0" max="1000" step="1" value="300"
                                 class="flex-1 sl-red" oninput="syncSlider('r3')">
-                            <input type="number" id="in_r3" min="0.1" max="100000" step="0.1" value="300"
+                            <input type="number" id="in_r3" min="0" max="100000" step="0.1" value="300"
                                 class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
                                 oninput="syncInput('r3')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
@@ -267,8 +289,8 @@
 
                 <!-- ── Star-Delta Parameters ── -->
                 <div id="sd-params" class="bg-white rounded-xl shadow-md p-4 border border-gray-100 space-y-3 hidden">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Star ⇌ Delta Conversion
-                    </h2>
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Star ⇌ Delta Conversion</h2>
+                    <p class="text-xs text-gray-500">แปลงวงจรเพื่อวิเคราะห์ค่าความต้านทาน — ป้อนค่าฝั่งใดฝั่งหนึ่ง ระบบจะคำนวณอีกฝั่งให้อัตโนมัติ</p>
                     <!-- Delta -->
                     <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                         <h3 class="text-sm font-bold text-blue-700 mb-2">△ Delta (Ra, Rb, Rc)</h3>
@@ -347,9 +369,9 @@
                             <label class="text-sm font-semibold text-red-500">Ω Resistance (R)</label>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r_ac" min="1" max="5000" step="1" value="100"
+                            <input type="range" id="sl_r_ac" min="0" max="5000" step="1" value="100"
                                 class="flex-1 sl-red" oninput="syncSlider('r_ac')">
-                            <input type="number" id="in_r_ac" min="0.1" max="100000" step="0.1" value="100"
+                            <input type="number" id="in_r_ac" min="0" max="100000" step="0.1" value="100"
                                 class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
                                 oninput="syncInput('r_ac')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
@@ -362,16 +384,19 @@
                             <span class="text-xs text-gray-400">mH</span>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
-                            <input type="range" id="sl_l" min="1" max="1000" step="1" value="150" class="flex-1 sl-blue"
+                            <input type="range" id="sl_l" min="0" max="1000" step="1" value="150" class="flex-1 sl-blue"
                                 oninput="syncSlider('l')">
-                            <input type="number" id="in_l" min="0.1" max="10000" step="0.1" value="150"
+                            <input type="number" id="in_l" min="0" max="10000" step="0.1" value="150"
                                 class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 oninput="syncInput('l')">
                             <span class="text-sm font-medium text-gray-500 w-8">mH</span>
                         </div>
-                        <div class="flex items-center justify-between bg-blue-50 px-3 py-1.5 rounded border border-blue-100">
+                        <div
+                            class="flex items-center justify-between bg-blue-50 px-3 py-1.5 rounded border border-blue-100">
                             <span class="text-xs font-semibold text-blue-600">Reactance X_L (Ω)</span>
-                            <input type="number" id="in_xl" min="0" step="0.1" class="w-24 px-2 py-1 border border-blue-200 rounded text-sm mono text-right text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-400" oninput="syncXL()">
+                            <input type="number" id="in_xl" min="0" step="0.1"
+                                class="w-24 px-2 py-1 border border-blue-200 rounded text-sm mono text-right text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                oninput="syncXL()">
                         </div>
                     </div>
                     <!-- C -->
@@ -381,16 +406,19 @@
                             <span class="text-xs text-gray-400">µF</span>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
-                            <input type="range" id="sl_c" min="1" max="1000" step="1" value="100"
+                            <input type="range" id="sl_c" min="0" max="1000" step="1" value="100"
                                 class="flex-1 sl-green" oninput="syncSlider('c')">
-                            <input type="number" id="in_c" min="0.1" max="10000" step="0.1" value="100"
+                            <input type="number" id="in_c" min="0" max="10000" step="0.1" value="100"
                                 class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-green-400"
                                 oninput="syncInput('c')">
                             <span class="text-sm font-medium text-gray-500 w-8">µF</span>
                         </div>
-                        <div class="flex items-center justify-between bg-green-50 px-3 py-1.5 rounded border border-green-100">
+                        <div
+                            class="flex items-center justify-between bg-green-50 px-3 py-1.5 rounded border border-green-100">
                             <span class="text-xs font-semibold text-green-600">Reactance X_C (Ω)</span>
-                            <input type="number" id="in_xc" min="0" step="0.1" class="w-24 px-2 py-1 border border-green-200 rounded text-sm mono text-right text-green-700 focus:outline-none focus:ring-1 focus:ring-green-400" oninput="syncXC()">
+                            <input type="number" id="in_xc" min="0" step="0.1"
+                                class="w-24 px-2 py-1 border border-green-200 rounded text-sm mono text-right text-green-700 focus:outline-none focus:ring-1 focus:ring-green-400"
+                                oninput="syncXC()">
                         </div>
                     </div>
                 </div>
@@ -417,13 +445,15 @@
                         </h2>
                         <div id="dc-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
                     </div>
+
+
                     <div id="sd-diagram" class="bg-white rounded-xl shadow-md p-5 border border-gray-100 hidden">
                         <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                             <span
                                 class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 text-base">△</span>
-                            Star‑Delta Diagram
+                            Star‑Delta Circuit Conversion Diagram
                         </h2>
-                        <div class="flex justify-center"><canvas id="sdCanvas" width="500" height="280"></canvas></div>
+                        <div class="flex justify-center"><canvas id="sdCanvas" width="560" height="300" style="background:#f8fafc;border-radius:12px;max-width:100%;"></canvas></div>
                     </div>
                 </div>
 
@@ -465,14 +495,39 @@
                         <h2 class="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
                             <span
                                 class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 text-base">🎯</span>
-                            Phasor Diagram
+                            Impedance Phasor Diagram (Z = R + jX)
                         </h2>
-                        <p id="phasor_desc" class="text-xs text-gray-500 mb-3 text-center">Reference: Current (I) at 0°
-                        </p>
+                        <p id="phasor_desc" class="text-xs text-gray-500 mb-3 text-center">Impedance Triangle: Z = R + jX (Ω)</p>
                         <div class="flex justify-center"><canvas id="phasorCanvas" width="400" height="400"
                                 class="max-w-full"></canvas></div>
                     </div>
                 </div>
+
+                <!-- Resonance Results -->
+                <div id="res-out" class="space-y-4 hidden">
+                    <!-- Results Grid -->
+                    <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <span
+                                class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-base">🔔</span>
+                            Resonance Analysis
+                        </h2>
+                        <div id="res-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+                    </div>
+
+                    <!-- Frequency Response Chart -->
+                    <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+                        <div class="flex flex-wrap items-center justify-between p-4 border-b border-gray-100 gap-2">
+                            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <span
+                                    class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-base">📉</span>
+                                Frequency Response (|Z| &amp; |I| vs Frequency)
+                            </h2>
+                        </div>
+                        <div class="p-4 relative" style="height:360px;"><canvas id="resChart"></canvas></div>
+                    </div>
+                </div>
+
             </section>
 
         </div>
@@ -539,7 +594,7 @@
             // R = V / I
             resistance: (V, I) => I !== 0 ? V / I : Infinity,
 
-            // 1.1 กำลังไฟฟ้า (Power)
+            // 1.2 กำลังไฟฟ้า (Power)
             // P = V × I
             power_VI: (V, I) => V * I,
             // P = I² × R
@@ -611,8 +666,10 @@
             // Y = 1/R + 1/(jXL) + jωC = G - j/XL + j/XC
             Zparallel: (R, xl, xc) => {
                 const Yr = new Complex(R > 0 ? 1 / R : 0, 0);
-                const Yl = xl > 0 ? new Complex(0, -1 / xl) : new Complex(0, 0);
-                const Yc = xc > 0 ? new Complex(0, 1 / xc) : new Complex(0, 0);
+                // FIX: When xl=0 the inductor is a short (Y_L → ∞), handled by using
+                // a very large admittance rather than silently returning 0.
+                const Yl = xl > 1e-9 ? new Complex(0, -1 / xl) : new Complex(0, -1e9);
+                const Yc = xc > 1e-9 ? new Complex(0, 1 / xc) : new Complex(0, 0);
                 const Y = Yr.add(Yl).add(Yc);
                 return { Z: new Complex(1, 0).div(Y), Y };
             },
@@ -656,26 +713,33 @@
             updateAll();
         }
         function syncInput(k) {
-            let v = parseFloat(document.getElementById(PM[k][1]).value);
-            if (!isNaN(v)) { 
-                const s = document.getElementById(PM[k][0]); 
-                v = Math.min(Math.max(v, +s.min), +s.max);
-                s.value = v; 
-                // บังคับให้ช่องกรอกมีค่าไม่น้อยกว่า min เพื่อป้องกันการหารด้วยศูนย์ (Division by Zero)
-                document.getElementById(PM[k][1]).value = v;
+            const inp = document.getElementById(PM[k][1]);
+            let v = parseFloat(inp.value);
+            if (!isNaN(v)) {
+                // BUG9 FIX: Clamp the SLIDER to its own (narrower) range,
+                // but do NOT clamp the input field — it intentionally allows
+                // a wider range than the slider (e.g. input max=10000, slider max=500).
+                const s = document.getElementById(PM[k][0]);
+                s.value = Math.min(Math.max(v, +s.min), +s.max);
+                // Only enforce the input's own min/max
+                const inMin = parseFloat(inp.min), inMax = parseFloat(inp.max);
+                if (!isNaN(inMin) && v < inMin) { v = inMin; inp.value = v; }
+                if (!isNaN(inMax) && v > inMax) { v = inMax; inp.value = v; }
             }
             if (k === 'l' || k === 'c' || k === 'freq') syncXfromLC();
             updateAll();
         }
-        function gv(k) { 
+        function gv(k) {
             const el = document.getElementById(PM[k][1]);
             let val = parseFloat(el.value);
-            if (isNaN(val) || val === 0) {
-                // fallback to slider if input is invalid or 0 (prevent Infinity/NaN)
+            // Allow R=0, L=0, C=0. Only freq must be strictly positive.
+            const mustBePositive = ['freq'];
+            if (isNaN(val) || (val <= 0 && mustBePositive.includes(k))) {
                 val = parseFloat(document.getElementById(PM[k][0]).value);
             }
             return val;
         }
+        function gvRaw(id) { return parseFloat(document.getElementById(id).value); }
 
         // ── Reactance ↔ L/C Bidirectional Sync ──
         let _syncing = false;
@@ -690,7 +754,7 @@
             const xl = CE.XL(f, L);
             const xc = CE.XC(f, C);
             document.getElementById('in_xl').value = xl.toFixed(2);
-            document.getElementById('in_xc').value = isFinite(xc) ? xc.toFixed(2) : '0';
+            document.getElementById('in_xc').value = isFinite(xc) ? xc.toFixed(2) : '';
             _syncing = false;
         }
 
@@ -705,8 +769,8 @@
             document.getElementById('in_l').value = L_mH.toFixed(2);
             const s = document.getElementById('sl_l');
             s.value = Math.min(Math.max(L_mH, +s.min), +s.max);
-            _syncing = false;
             updateAll();
+            _syncing = false;
         }
 
         // เมื่อกรอก XC (Ω) → คำนวณกลับหา C (µF)
@@ -714,14 +778,20 @@
             if (_syncing) return;
             _syncing = true;
             const f = gv('freq') || 1;
-            const xc = parseFloat(document.getElementById('in_xc').value) || 0.01;
+            const rawXc = parseFloat(document.getElementById('in_xc').value);
+            const xc = (!isNaN(rawXc) && rawXc >= 0) ? rawXc : 0;
+            if (!isNaN(rawXc) && rawXc < 0) {
+                document.getElementById('in_xc').value = '0';
+            }
             const C_F = CE.CfromXC(f, xc);       // C in Farads
             const C_uF = isFinite(C_F) ? C_F * 1e6 : 0;              // → µF
-            document.getElementById('in_c').value = C_uF.toFixed(2);
-            const s = document.getElementById('sl_c');
-            s.value = Math.min(Math.max(C_uF, +s.min), +s.max);
-            _syncing = false;
+            document.getElementById('in_c').value = isFinite(C_F) ? C_uF.toFixed(2) : '';
+            if (isFinite(C_F)) {
+                const s = document.getElementById('sl_c');
+                s.value = Math.min(Math.max(C_uF, +s.min), +s.max);
+            }
             updateAll();
+            _syncing = false;
         }
 
         // ╔══════════════════════════════════════════════════════════════╗
@@ -740,7 +810,10 @@
             document.getElementById('ac-params').classList.toggle('hidden', m !== 'ac');
             document.getElementById('dc-out').classList.toggle('hidden', m !== 'dc');
             document.getElementById('ac-out').classList.toggle('hidden', m !== 'ac');
+            document.getElementById('res-out').classList.add('hidden');
             document.getElementById('sd-params').classList.add('hidden');
+            // BUG12 FIX: Initialise XL/XC display fields when first switching to AC
+            if (m === 'ac') syncXfromLC();
             setCircuitMode(m === 'dc' ? 'ohm' : 'series_ac');
         }
 
@@ -753,14 +826,15 @@
             document.getElementById('r3-group').classList.toggle('hidden', !multi);
             document.getElementById('sd-params').classList.toggle('hidden', m !== 'star_delta');
             document.getElementById('sd-diagram').classList.toggle('hidden', m !== 'star_delta');
+
             if (ST.src === 'dc') document.getElementById('dc-params').classList.toggle('hidden', m === 'star_delta');
-            
+
             // Resonance mode: show resonance results, hide AC results
             if (ST.src === 'ac') {
                 const isRes = m === 'resonance';
                 document.getElementById('ac-out').classList.toggle('hidden', isRes);
                 document.getElementById('res-out').classList.toggle('hidden', !isRes);
-                
+
                 // Force Chart.js to resize after becoming visible
                 setTimeout(() => {
                     if (isRes && typeof resChart !== 'undefined' && resChart) { resChart.resize(); resChart.update(); }
@@ -792,39 +866,68 @@
 
         function drawSD() {
             const cv = document.getElementById('sdCanvas'); if (!cv) return;
-            const cx = cv.getContext('2d'), W = cv.width, H = cv.height;
-            cx.clearRect(0, 0, W, H);
+            const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, W, H);
             const Ra = +document.getElementById('sd_ra').value || 0, Rb = +document.getElementById('sd_rb').value || 0, Rc = +document.getElementById('sd_rc').value || 0;
             const sR1 = +document.getElementById('sd_r1').value || 0, sR2 = +document.getElementById('sd_r2').value || 0, sR3 = +document.getElementById('sd_r3').value || 0;
 
+            // Title bar
+            ctx.fillStyle = '#1e3a8a'; ctx.fillRect(0, 0, W, 30);
+            ctx.font = 'bold 12px Inter'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+            ctx.fillText('Star \u21cc Delta Conversion \u2014 Resistance Analysis', W/2, 20);
+
+            // Helper: draw zigzag resistor along a line segment
+            const drawZigzag = (x1, y1, x2, y2, val, lbl, color) => {
+                const mx = (x1+x2)/2, my = (y1+y2)/2;
+                const len = Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+                const ang = Math.atan2(y2-y1, x2-x1);
+                ctx.save(); ctx.translate(mx, my); ctx.rotate(ang);
+                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+                ctx.moveTo(-len/2, 0); ctx.lineTo(-len/2+8, 0); ctx.stroke();
+                const rw = Math.min(len*0.55, 50), rh = 7;
+                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2;
+                const seg = rw/8; ctx.moveTo(-rw/2, 0);
+                for (let i=0; i<8; i++) ctx.lineTo(-rw/2+(i+0.5)*seg, (i%2===0?-rh:rh));
+                ctx.lineTo(rw/2, 0); ctx.stroke();
+                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+                ctx.moveTo(len/2-8, 0); ctx.lineTo(len/2, 0); ctx.stroke();
+                ctx.restore();
+                const perp = ang + Math.PI/2, off = 20;
+                ctx.font = 'bold 10px Inter'; ctx.fillStyle = color; ctx.textAlign = 'center';
+                ctx.fillText(lbl + '=' + val.toFixed(2) + '\u03a9', mx + off*Math.cos(perp), my + off*Math.sin(perp) + 4);
+            };
+
             // Delta (left)
-            const dCx = W * .25, dCy = H * .52, dS = 65;
-            const dp = [{ x: dCx, y: dCy - dS }, { x: dCx - dS * .87, y: dCy + dS * .5 }, { x: dCx + dS * .87, y: dCy + dS * .5 }];
-            cx.beginPath(); cx.strokeStyle = '#3b82f6'; cx.lineWidth = 2.5;
-            cx.moveTo(dp[0].x, dp[0].y); cx.lineTo(dp[1].x, dp[1].y); cx.lineTo(dp[2].x, dp[2].y); cx.closePath(); cx.stroke();
-            cx.font = 'bold 13px Inter'; cx.fillStyle = '#1e40af'; cx.textAlign = 'center'; cx.fillText('△ Delta', dCx, 22);
-            cx.font = '11px JetBrains Mono'; cx.fillStyle = '#3b82f6';
-            cx.fillText(`Ra=${Ra.toFixed(1)}Ω`, dCx - dS * .55, dCy - dS * .35);
-            cx.fillText(`Rb=${Rb.toFixed(1)}Ω`, dCx + dS * .55, dCy - dS * .35);
-            cx.fillText(`Rc=${Rc.toFixed(1)}Ω`, dCx, dCy + dS * .5 + 18);
-            dp.forEach(p => { cx.beginPath(); cx.arc(p.x, p.y, 4, 0, 2 * Math.PI); cx.fillStyle = '#3b82f6'; cx.fill(); });
+            const dCx = W*0.26, dCy = H*0.60, dS = 75;
+            const dp = [{x:dCx, y:dCy-dS}, {x:dCx-dS*0.87, y:dCy+dS*0.5}, {x:dCx+dS*0.87, y:dCy+dS*0.5}];
+            ctx.beginPath(); ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 2.5;
+            ctx.moveTo(dp[0].x,dp[0].y); ctx.lineTo(dp[1].x,dp[1].y); ctx.lineTo(dp[2].x,dp[2].y); ctx.closePath(); ctx.stroke();
+            drawZigzag(dp[0].x,dp[0].y, dp[1].x,dp[1].y, Ra,'Ra','#1d4ed8');
+            drawZigzag(dp[1].x,dp[1].y, dp[2].x,dp[2].y, Rc,'Rc','#1d4ed8');
+            drawZigzag(dp[0].x,dp[0].y, dp[2].x,dp[2].y, Rb,'Rb','#1d4ed8');
+            dp.forEach((p, i) => { ctx.beginPath(); ctx.arc(p.x,p.y,5,0,2*Math.PI); ctx.fillStyle='#3b82f6'; ctx.fill(); ctx.font='bold 12px Inter'; ctx.fillStyle='#1e40af'; ctx.textAlign='center'; ctx.fillText(['A','B','C'][i], p.x+(i===0?0:i===1?-14:14), p.y+(i===0?-12:14)); });
+            ctx.font='bold 13px Inter'; ctx.fillStyle='#1e40af'; ctx.textAlign='center'; ctx.fillText('\u25b3 Delta', dCx, 48);
 
             // Arrow
-            cx.font = 'bold 26px Inter'; cx.fillStyle = '#9ca3af'; cx.textAlign = 'center'; cx.fillText('⇌', W * .5, H * .52 + 6);
+            ctx.font='bold 26px Inter'; ctx.fillStyle='#6b7280'; ctx.textAlign='center'; ctx.fillText('\u21cc', W*0.5, H*0.58+4);
 
             // Star (right)
-            const sCx = W * .75, sCy = H * .52;
-            const sp = [{ x: sCx, y: sCy - dS }, { x: sCx - dS * .87, y: sCy + dS * .5 }, { x: sCx + dS * .87, y: sCy + dS * .5 }];
-            cx.beginPath(); cx.strokeStyle = '#10b981'; cx.lineWidth = 2.5;
-            sp.forEach(p => { cx.moveTo(sCx, sCy); cx.lineTo(p.x, p.y); }); cx.stroke();
-            cx.beginPath(); cx.arc(sCx, sCy, 5, 0, 2 * Math.PI); cx.fillStyle = '#10b981'; cx.fill();
-            sp.forEach(p => { cx.beginPath(); cx.arc(p.x, p.y, 4, 0, 2 * Math.PI); cx.fillStyle = '#10b981'; cx.fill(); });
-            cx.font = 'bold 13px Inter'; cx.fillStyle = '#065f46'; cx.textAlign = 'center'; cx.fillText('Y Star', sCx, 22);
-            cx.font = '11px JetBrains Mono'; cx.fillStyle = '#10b981';
-            cx.fillText(`R1=${sR1.toFixed(1)}Ω`, sCx - 5, sCy - dS * .55);
-            cx.fillText(`R2=${sR2.toFixed(1)}Ω`, sCx - dS * .65, sCy + dS * .15);
-            cx.fillText(`R3=${sR3.toFixed(1)}Ω`, sCx + dS * .65, sCy + dS * .15);
+            const sCx = W*0.74, sCy = H*0.60;
+            const sp = [{x:sCx, y:sCy-dS}, {x:sCx-dS*0.87, y:sCy+dS*0.5}, {x:sCx+dS*0.87, y:sCy+dS*0.5}];
+            ctx.beginPath(); ctx.strokeStyle = '#6ee7b7'; ctx.lineWidth = 2.5;
+            sp.forEach(p => { ctx.moveTo(sCx,sCy); ctx.lineTo(p.x,p.y); }); ctx.stroke();
+            drawZigzag(sCx,sCy, sp[0].x,sp[0].y, sR1,'R1','#065f46');
+            drawZigzag(sCx,sCy, sp[1].x,sp[1].y, sR2,'R2','#065f46');
+            drawZigzag(sCx,sCy, sp[2].x,sp[2].y, sR3,'R3','#065f46');
+            ctx.beginPath(); ctx.arc(sCx,sCy,5,0,2*Math.PI); ctx.fillStyle='#10b981'; ctx.fill();
+            ctx.font='9px Inter'; ctx.fillStyle='#065f46'; ctx.textAlign='center'; ctx.fillText('N',sCx,sCy+14);
+            sp.forEach((p,i) => { ctx.beginPath(); ctx.arc(p.x,p.y,5,0,2*Math.PI); ctx.fillStyle='#10b981'; ctx.fill(); ctx.font='bold 12px Inter'; ctx.fillStyle='#065f46'; ctx.textAlign='center'; ctx.fillText(['A','B','C'][i], p.x+(i===0?0:i===1?-14:14), p.y+(i===0?-12:14)); });
+            ctx.font='bold 13px Inter'; ctx.fillStyle='#065f46'; ctx.textAlign='center'; ctx.fillText('Y Star', sCx, 48);
         }
+
+
+
 
         // ╔══════════════════════════════════════════════════════════════╗
         // ║  Main Update                                                ║
@@ -899,7 +1002,9 @@
 
         // ──── AC Update ────────────────────────────────────────────────
         function updateAC() {
-            const V = gv('v_ac'), f = gv('freq') || 1, R = gv('r_ac') || .1;
+            const V = gv('v_ac'), f = gv('freq') || 1;
+            const R_raw = gvRaw('in_r_ac');
+            const R = (!isNaN(R_raw) && R_raw >= 0) ? R_raw : 0;
             const L = gv('l') / 1000, C = gv('c') / 1e6;
             const w = CE.omega(f), xl = CE.XL(f, L), xc = CE.XC(f, C);
 
@@ -911,16 +1016,14 @@
 
             const mode = ST.cir;
             let Zc, Ip, pRad, pDeg, IR = 0, IL = 0, IC = 0;
-            let ph, pu, pd, pr, pMode;
+            let pMode;
 
             if (mode === 'series_ac') {
                 Zc = CE.Zseries(R, xl, xc);
                 const Zm = Zc.mag();
                 Ip = Zm > 0 ? V / Zm : 0;
                 pRad = Zc.phase(); pDeg = pRad * 180 / Math.PI;
-                ph = Ip * R; pu = Ip * xl; pd = Ip * xc; pr = V;
                 pMode = 'series';
-                document.getElementById('phasor_desc').textContent = 'Reference: Current (I) at 0°';
             } else {
                 IR = R > 0 ? V / R : 0;
                 IL = xl > 0 ? V / xl : 0;
@@ -930,9 +1033,7 @@
                 const Zm = Ip > 0 ? V / Ip : 0;
                 pRad = Math.atan2(Ire, IR); pDeg = pRad * 180 / Math.PI;
                 Zc = Ip > 0 ? Complex.polar(Zm, -pRad) : new Complex(0, 0);
-                ph = IR; pu = IC; pd = IL; pr = Ip;
                 pMode = 'parallel';
-                document.getElementById('phasor_desc').textContent = 'Reference: Voltage (V) at 0°';
             }
 
             const Yc = Zc.mag() > 0 ? CE.admit(Zc) : new Complex(0, 0);
@@ -962,7 +1063,9 @@
             renderCards('ac-grid', res);
             renderQuickAC(Zc, pDeg, Ip, sState, sCol);
             renderLegend(pMode);
-            drawPhasor(ph, pu, pd, pr, pMode, pDeg);
+            // Impedance triangle: pass R, X_net, |Z|, and pDeg
+            const X_net = Zc.im;   // imaginary part of Z (positive=inductive, negative=capacitive)
+            drawPhasor(Zc.re, X_net, Zc.mag(), pDeg, pMode, Zc);
             ST.wave = { V, f, w, R, xl, xc, Ip, pRad, IR, IL, IC, mode: pMode };
         }
 
@@ -970,12 +1073,12 @@
         function updateResonance() {
             const V = gv('v_ac'), R = gv('r_ac') || 0.1;
             const L = gv('l') / 1000 || 1e-6, C = gv('c') / 1e6 || 1e-9;
-            
+
             const f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
             const w0 = 2 * Math.PI * f0;
             const xl0 = w0 * L;
             const xc0 = 1 / (w0 * C);
-            
+
             const Q = (1 / R) * Math.sqrt(L / C);
             const BW = f0 / Q;
             const fl = f0 - BW / 2;
@@ -1087,7 +1190,7 @@
 
         function initResChart() {
             const ctx = document.getElementById('resChart');
-            if(!ctx) return;
+            if (!ctx) return;
             resChart = new Chart(ctx.getContext('2d'), {
                 type: 'line',
                 data: {
@@ -1111,25 +1214,28 @@
 
         function updateResChart(f0, R, L, C, BW) {
             if (!resChart) return;
-            const pts = 100;
-            // พล็อตกว้าง 3 เท่าของแบนด์วิดท์รอบๆ f0
-            const f_min = Math.max(1, f0 - 1.5 * BW);
-            const f_max = f0 + 1.5 * BW;
+            const pts = 200;
+            // FIX: For high-Q circuits BW can be tiny, making the chart look flat.
+            // Use at least ±50 % of f0 so the curve is always visible.
+            const minSpan = f0 * 1.0;          // minimum window = 100% of f0
+            const span = Math.max(BW * 8, minSpan);
+            const f_min = Math.max(1, f0 - span / 2);
+            const f_max = f0 + span / 2;
             const df = (f_max - f_min) / pts;
-            
+
             const freqs = [], Zs = [], Is = [];
             const V = gv('v_ac');
-            
+
             for (let i = 0; i <= pts; i++) {
                 const f = f_min + i * df;
                 freqs.push(f.toFixed(1));
                 const xl = 2 * Math.PI * f * L;
                 const xc = 1 / (2 * Math.PI * f * C);
-                const Z = Math.sqrt(R*R + Math.pow(xl - xc, 2));
+                const Z = Math.sqrt(R * R + Math.pow(xl - xc, 2));
                 Zs.push(Z);
                 Is.push(V / Z);
             }
-            
+
             resChart.data.labels = freqs;
             resChart.data.datasets[0].data = Zs;
             resChart.data.datasets[1].data = Is;
@@ -1146,15 +1252,18 @@
                 const t = i * dt;
                 t_.push((t * 1000).toFixed(1));
                 if (mode === 'series') {
-                    d0.push(CE.instV(V, w, t, po));
-                    d1.push(CE.instV(Ip * R, w, t, -pRad + po));
-                    d2.push(CE.instV(Ip * xl, w, t, -pRad + Math.PI / 2 + po));
-                    d3.push(CE.instV(Ip * xc, w, t, -pRad - Math.PI / 2 + po));
+                    // FIX: Use current I (= V_R direction) as phase 0°, matching the
+                    // phasor diagram's "Reference: Current at 0°" label.
+                    // V_s leads the current by pRad (V_s = Z·I, angle of Z = pRad).
+                    d0.push(CE.instV(V,       w, t,  pRad + po));             // V_s leads I by pRad
+                    d1.push(CE.instV(Ip * R,  w, t,  po));                    // V_R in-phase with I (0°)
+                    d2.push(CE.instV(Ip * xl, w, t,  Math.PI / 2 + po));      // V_L leads I by 90°
+                    d3.push(CE.instV(Ip * xc, w, t, -Math.PI / 2 + po));      // V_C lags  I by 90°
                 } else {
                     d0.push(CE.instI(Ip, w, t, pRad + po));
                     d1.push(CE.instI(IR, w, t, po));
                     d2.push(CE.instI(IL, w, t, -Math.PI / 2 + po));
-                    d3.push(CE.instI(IC, w, t, Math.PI / 2 + po));
+                    d3.push(CE.instI(IC, w, t,  Math.PI / 2 + po));
                 }
             }
             const allD = [...d0, ...d1, ...d2, ...d3];
@@ -1194,117 +1303,273 @@
         }
 
         function exportChart() {
-            if (!oscChart) return;
-            const cv = document.getElementById('oscChart');
+            // FIX: Export whichever chart is currently visible (oscilloscope or
+            // frequency-response), not always oscChart.
+            const isResonance = ST.cir === 'resonance';
+            const activeChart = isResonance ? resChart : oscChart;
+            const canvasId = isResonance ? 'resChart' : 'oscChart';
+            const fileName = isResonance ? 'frequency_response.png' : 'waveform.png';
+            if (!activeChart) return;
+            const cv = document.getElementById(canvasId);
             const tc = document.createElement('canvas'); tc.width = cv.width; tc.height = cv.height;
             const tx = tc.getContext('2d'); tx.fillStyle = '#fff'; tx.fillRect(0, 0, tc.width, tc.height); tx.drawImage(cv, 0, 0);
-            const a = document.createElement('a'); a.download = 'waveform.png'; a.href = tc.toDataURL('image/png'); a.click();
+            const a = document.createElement('a'); a.download = fileName; a.href = tc.toDataURL('image/png'); a.click();
         }
 
         // ╔══════════════════════════════════════════════════════════════╗
         // ║  Phasor Diagram (Canvas API with Grid & Labels)             ║
         // ╚══════════════════════════════════════════════════════════════╝
-        function drawPhasor(xm, upm, dnm, resm, mode, pDeg) {
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  Impedance Phasor Diagram  Z = R + jX                       ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        //  Parameters:
+        //    R_val  — resistance (real part of Z), Ω
+        //    X_val  — reactance (imaginary part of Z), Ω  (+= inductive, -= capacitive)
+        //    Zmag   — |Z| = magnitude, Ω
+        //    pDeg   — phase angle θ in degrees
+        //    mode   — 'series' | 'parallel'
+        //    Zc     — Complex Z object (for the info-box)
+        function drawPhasor(R_val, X_val, Zmag, pDeg, mode, Zc) {
             const cv = document.getElementById('phasorCanvas'); if (!cv) return;
-            const ctx = cv.getContext('2d'), W = cv.width, H = cv.height, cx = W / 2, cy = H / 2;
+            const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+            const cx = W / 2, cy = H / 2;
             ctx.clearRect(0, 0, W, H);
 
-            const maxV = Math.max(xm, upm, dnm, resm, 0.1);
-            const rad = Math.min(W, H) / 2 - 45;
-            const sc = rad / maxV;
+            // ── Update subtitle ──
+            const desc = document.getElementById('phasor_desc');
+            if (desc) {
+                const Xstr = X_val >= 0
+                    ? `+j${X_val.toFixed(2)}`
+                    : `−j${Math.abs(X_val).toFixed(2)}`;
+                desc.textContent = `Z = ${R_val.toFixed(2)} ${Xstr} Ω  |  |Z| = ${Zmag.toFixed(2)} Ω ∠ ${pDeg.toFixed(2)}°`;
+            }
 
-            // ── Grid: Concentric circles ──
+            // ── Scale: fit the largest component in the plot area ──
+            const maxComp = Math.max(Math.abs(R_val), Math.abs(X_val), Zmag, 0.1);
+            const plotR = Math.min(W, H) / 2 - 50;
+            const sc = plotR / maxComp;
+
+            // ── Grid: concentric circles ──
             ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 0.5;
-            for (let i = 1; i <= 4; i++) { ctx.beginPath(); ctx.arc(cx, cy, (rad / 4) * i, 0, 2 * Math.PI); ctx.stroke(); }
+            for (let i = 1; i <= 4; i++) {
+                ctx.beginPath(); ctx.arc(cx, cy, (plotR / 4) * i, 0, 2 * Math.PI); ctx.stroke();
+            }
 
-            // ── Grid: Radial lines every 30° ──
+            // ── Grid: radial lines every 30° ──
             ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 0.5;
             for (let a = 0; a < 360; a += 30) {
                 const r = a * Math.PI / 180;
-                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + rad * Math.cos(r), cy - rad * Math.sin(r)); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + plotR * Math.cos(r), cy - plotR * Math.sin(r)); ctx.stroke();
             }
 
-            // ── Axes (thicker) ──
-            ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+            // ── Axes ──
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.2;
             ctx.beginPath();
-            ctx.moveTo(cx - rad - 12, cy); ctx.lineTo(cx + rad + 12, cy);
-            ctx.moveTo(cx, cy - rad - 12); ctx.lineTo(cx, cy + rad + 12);
+            ctx.moveTo(cx - plotR - 14, cy); ctx.lineTo(cx + plotR + 14, cy);   // Real axis
+            ctx.moveTo(cx, cy - plotR - 14); ctx.lineTo(cx, cy + plotR + 14);   // Imag axis
             ctx.stroke();
 
-            // ── Angle labels ──
+            // Axis labels
             ctx.font = '10px Inter'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center';
-            ctx.fillText('0°', cx + rad + 20, cy + 4);
-            ctx.fillText('90°', cx, cy - rad - 16);
-            ctx.fillText('180°', cx - rad - 22, cy + 4);
-            ctx.fillText('270°', cx, cy + rad + 18);
+            ctx.fillText('Re (Ω)', cx + plotR + 22, cy + 4);
+            ctx.fillText('+jX', cx, cy - plotR - 20);
+            ctx.fillText('−jX', cx, cy + plotR + 20);
 
-            // ── Vectors ──
-            const lb = mode === 'series'
-                ? { x: 'V_R', up: 'V_L', down: 'V_C', res: 'V_src' }
-                : { x: 'I_R', up: 'I_C', down: 'I_L', res: 'I_tot' };
-            const cl = mode === 'series'
-                ? { x: '#ef4444', up: '#3b82f6', down: '#10b981', res: '#6b7280' }
-                : { x: '#ef4444', up: '#10b981', down: '#3b82f6', res: '#6b7280' };
-
-            function vec(vx, vy, color, label, showArc) {
-                if (Math.abs(vx) < maxV * .005 && Math.abs(vy) < maxV * .005) return;
-                const ex = cx + vx * sc, ey = cy - vy * sc;
-                // Line
-                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2.5;
-                ctx.moveTo(cx, cy); ctx.lineTo(ex, ey); ctx.stroke();
+            // ── Arrow helper ──
+            function arrow(x1, y1, x2, y2, color, width, lbl, val, showArc) {
+                const dx = x2 - x1, dy = y2 - y1;
+                const len = Math.sqrt(dx*dx + dy*dy);
+                if (len < 2) return;
+                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width;
+                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
                 // Arrowhead
-                const ang = Math.atan2(-vy, vx);
+                const ang = Math.atan2(dy, dx);
+                const hs = 9;
                 ctx.beginPath(); ctx.fillStyle = color;
-                ctx.moveTo(ex, ey);
-                ctx.lineTo(ex - 10 * Math.cos(ang - Math.PI / 6), ey + 10 * Math.sin(ang - Math.PI / 6));
-                ctx.lineTo(ex - 10 * Math.cos(ang + Math.PI / 6), ey + 10 * Math.sin(ang + Math.PI / 6));
-                ctx.fill();
-                // Label + magnitude
-                const mg = Math.sqrt(vx * vx + vy * vy);
-                const lx = ex + (vx >= 0 ? 8 : -8), ly = ey + (vy >= 0 ? -8 : 14);
-                ctx.font = 'bold 11px Inter'; ctx.fillStyle = color; ctx.textAlign = vx >= 0 ? 'left' : 'right';
-                ctx.fillText(label, lx, ly);
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - hs*Math.cos(ang - Math.PI/6), y2 - hs*Math.sin(ang - Math.PI/6));
+                ctx.lineTo(x2 - hs*Math.cos(ang + Math.PI/6), y2 - hs*Math.sin(ang + Math.PI/6));
+                ctx.closePath(); ctx.fill();
+                // Label
+                const ox = dx >= 0 ? 10 : -10, oy = dy <= 0 ? -10 : 14;
+                ctx.font = 'bold 12px Inter'; ctx.fillStyle = color;
+                ctx.textAlign = dx >= 0 ? 'left' : 'right';
+                ctx.fillText(lbl, x2 + ox, y2 + oy);
                 ctx.font = '9px JetBrains Mono'; ctx.fillStyle = '#64748b';
-                ctx.fillText(mg.toFixed(1), lx, ly + 12);
-                // Phase arc
-                if (showArc && mg > maxV * .05) {
-                    const aR = Math.min(35, mg * sc * .3);
-                    const eA = -Math.atan2(vy, vx);
-                    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
-                    ctx.arc(cx, cy, aR, 0, eA, vy > 0); ctx.stroke(); ctx.setLineDash([]);
-                    const mA = eA / 2;
+                ctx.fillText(val.toFixed(2) + ' Ω', x2 + ox, y2 + oy + 12);
+                // Phase arc for |Z| vector
+                if (showArc && len > 10) {
+                    const aR = Math.min(38, len * 0.28);
+                    const startAng = 0;          // from positive-Re axis
+                    const endAng   = -Math.atan2(y2-cy, x2-cx);  // canvas y is inverted
+                    const ccw = (y2 < cy);        // inductive → arc goes CCW (upward)
+                    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    ctx.arc(cx, cy, aR, startAng, -endAng, ccw);
+                    ctx.stroke(); ctx.setLineDash([]);
+                    const midAng = -endAng / 2 + (ccw ? -Math.PI/12 : Math.PI/12);
                     ctx.font = '10px JetBrains Mono'; ctx.fillStyle = color; ctx.textAlign = 'center';
-                    const aDeg = Math.atan2(vy, vx) * 180 / Math.PI;
-                    ctx.fillText(`${aDeg.toFixed(1)}°`, cx + (aR + 16) * Math.cos(mA), cy + (aR + 16) * Math.sin(mA));
+                    ctx.fillText(`θ=${pDeg.toFixed(1)}°`,
+                        cx + (aR + 18) * Math.cos(midAng),
+                        cy + (aR + 18) * Math.sin(midAng));
                 }
             }
 
-            vec(xm, 0, cl.x, lb.x, false);
-            vec(0, upm, cl.up, lb.up, false);
-            vec(0, -dnm, cl.down, lb.down, false);
-            vec(xm, upm - dnm, cl.res, lb.res, true);
+            // ── Component colours ──
+            const colorR  = '#ef4444';   // Red   — resistance R
+            const colorX  = X_val >= 0 ? '#3b82f6' : '#10b981';  // Blue=inductive, Green=capacitive
+            const colorXlabel = X_val >= 0 ? 'X_L−X_C' : 'X_C−X_L';
+            const colorZ  = '#8b5cf6';   // Purple — |Z|
 
-            // Dashed construction lines
-            if (Math.abs(upm - dnm) > maxV * .01 && xm > maxV * .01) {
-                ctx.beginPath(); ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
-                ctx.moveTo(cx + xm * sc, cy); ctx.lineTo(cx + xm * sc, cy - (upm - dnm) * sc);
-                ctx.moveTo(cx, cy - (upm - dnm) * sc); ctx.lineTo(cx + xm * sc, cy - (upm - dnm) * sc);
+            // Pixel endpoints
+            const px_R  = cx + R_val * sc;          // tip of R vector (on Re axis)
+            const py_X  = cy - X_val * sc;           // tip of X vector (on Im axis)
+
+            // ── Dashed construction lines (dotted rectangle) ──
+            if (Math.abs(R_val) > maxComp * 0.01 && Math.abs(X_val) > maxComp * 0.01) {
+                ctx.beginPath(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+                ctx.moveTo(px_R, cy);  ctx.lineTo(px_R, py_X);   // vertical from R-tip
+                ctx.moveTo(cx,   py_X); ctx.lineTo(px_R, py_X);   // horizontal from X-tip
                 ctx.stroke(); ctx.setLineDash([]);
             }
 
-            // Phase text bottom
-            ctx.font = 'bold 12px Inter'; ctx.fillStyle = '#374151'; ctx.textAlign = 'center';
-            ctx.fillText(`θ = ${pDeg.toFixed(1)}°`, cx, H - 8);
+            // ── Draw the three vectors ──
+            // 1. R  (horizontal, Re-axis)
+            arrow(cx, cy, px_R, cy,   colorR,  2.8, 'R',  Math.abs(R_val), false);
+            // 2. X  (vertical, Im-axis)  — drawn from origin
+            arrow(cx, cy, cx,   py_X, colorX,  2.8, colorXlabel, Math.abs(X_val), false);
+            // 3. |Z|∠θ (diagonal resultant) — from origin to (R, X) corner
+            arrow(cx, cy, px_R, py_X, colorZ,  3.0, '|Z|', Zmag, true);
+
+            // ── Legend ──
+            const leg = [
+                [colorR, 'R (Resistance)'],
+                [colorX, X_val >= 0 ? 'X_L−X_C (Net Inductive)' : 'X_C−X_L (Net Capacitive)'],
+                [colorZ, '|Z| Impedance']
+            ];
+            leg.forEach(([c, txt], i) => {
+                ctx.fillStyle = c;
+                ctx.fillRect(10, 10 + i * 17, 12, 12);
+                ctx.font = '10px Inter'; ctx.fillStyle = '#374151'; ctx.textAlign = 'left';
+                ctx.fillText(txt, 26, 21 + i * 17);
+            });
+
+            // ── Z info-box (bottom-right) ──
+            if (Zc) {
+                const R_v = Zc.re, X_v = Zc.im;
+                const zRect  = `Z = ${R_v.toFixed(2)} ${X_v >= 0 ? '+' : '−'} j${Math.abs(X_v).toFixed(2)} Ω`;
+                const zPolar = `|Z| = ${Zc.mag().toFixed(2)} Ω  ∠ ${pDeg.toFixed(2)}°`;
+                const bx = W - 10, by = H - 44, bw = 196, bh = 38;
+                ctx.save();
+                ctx.globalAlpha = 0.9;
+                ctx.fillStyle = '#f8fafc'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.roundRect(bx - bw, by, bw, bh, 6);
+                ctx.fill(); ctx.stroke();
+                ctx.restore();
+                ctx.font = 'bold 11px JetBrains Mono'; ctx.fillStyle = '#4f46e5'; ctx.textAlign = 'right';
+                ctx.fillText(zRect,  bx - 7, by + 15);
+                ctx.font = '10px JetBrains Mono'; ctx.fillStyle = '#64748b'; ctx.textAlign = 'right';
+                ctx.fillText(zPolar, bx - 7, by + 30);
+            }
+
+            // ── Mode label (top-right) ──
+            ctx.font = 'bold 11px Inter'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
+            ctx.fillText(mode === 'series' ? 'Series RLC' : 'Parallel RLC', W - 10, 18);
         }
 
         // ╔══════════════════════════════════════════════════════════════╗
         // ║  Initialization                                             ║
         // ╚══════════════════════════════════════════════════════════════╝
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║  Enhanced Number Input (Scroll / Drag / Select-All)          ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        function clampToInput(el, val) {
+            const mn = parseFloat(el.min), mx = parseFloat(el.max);
+            if (!isNaN(mn) && val < mn) val = mn;
+            if (!isNaN(mx) && val > mx) val = mx;
+            return val;
+        }
+
+        function enhanceNumberInputs() {
+            document.querySelectorAll('input[type="number"]').forEach(el => {
+                // Tooltip hint
+                el.title = 'Scroll ↕ or drag ↔ to adjust • Click to type • Enter to confirm • Esc to cancel';
+
+                let prevVal = el.value;
+                let dragActive = false, dragStartX = 0, dragStartVal = 0, didDrag = false;
+
+                // ── Select-all on focus ──
+                el.addEventListener('focus', () => {
+                    prevVal = el.value;
+                    setTimeout(() => el.select(), 0);
+                });
+
+                // ── Enter / Escape ──
+                el.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+                    if (e.key === 'Escape') {
+                        el.value = prevVal;
+                        el.dispatchEvent(new Event('input'));
+                        el.blur();
+                    }
+                });
+
+                // ── Scroll wheel to adjust ──
+                el.addEventListener('wheel', e => {
+                    e.preventDefault();
+                    const step = parseFloat(el.step) || 1;
+                    const delta = e.deltaY < 0 ? step : -step;
+                    let v = clampToInput(el, (parseFloat(el.value) || 0) + delta);
+                    // keep reasonable decimal precision
+                    el.value = parseFloat(v.toPrecision(10));
+                    el.dispatchEvent(new Event('input'));
+                }, { passive: false });
+
+                // ── Horizontal drag scrubbing ──
+                el.addEventListener('mousedown', e => {
+                    if (document.activeElement === el) return; // let text cursor work
+                    dragActive = true;
+                    didDrag    = false;
+                    dragStartX = e.clientX;
+                    dragStartVal = parseFloat(el.value) || 0;
+                    document.body.classList.add('num-dragging');
+                    e.preventDefault();
+                });
+
+                el._onDragMove = e => {
+                    if (!dragActive) return;
+                    const dx = e.clientX - dragStartX;
+                    if (Math.abs(dx) > 3) didDrag = true;
+                    const step = parseFloat(el.step) || 1;
+                    // sensitivity: 1px = 0.5 × step
+                    let v = clampToInput(el, dragStartVal + dx * step * 0.5);
+                    el.value = parseFloat(v.toPrecision(10));
+                    el.dispatchEvent(new Event('input'));
+                };
+
+                el._onDragUp = () => {
+                    if (!dragActive) return;
+                    dragActive = false;
+                    document.body.classList.remove('num-dragging');
+                    if (!didDrag) {
+                        // plain click → focus + select
+                        el.focus();
+                        el.select();
+                    }
+                };
+
+                document.addEventListener('mousemove', el._onDragMove);
+                document.addEventListener('mouseup',   el._onDragUp);
+            });
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             initChart();
             initResChart();
             calcSD('delta');
             setSourceMode('dc');
+            enhanceNumberInputs();
             animLoop();
         });
     </script>
@@ -1312,4 +1577,3 @@
 </body>
 
 </html>
-</address>/> AC Spain Ronaldo@gmail.com/>
