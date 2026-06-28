@@ -574,10 +574,10 @@
                 const r = this.re.toFixed(d);
                 const i = Math.abs(this.im).toFixed(d);
                 if (Math.abs(this.im) < 5e-3) return r;
-                return `${r} ${this.im >= 0 ? '+' : '−'} j${i}`;
+                return ${r} ${this.im >= 0 ? '+' : '−'} j${i};
             }
             // แสดงผลในรูป Polar: |Z|∠θ°
-            polar_str(d = 2) { return `${this.mag().toFixed(d)}∠${this.phaseDeg().toFixed(d)}°`; }
+            polar_str(d = 2) { return ${this.mag().toFixed(d)}∠${this.phaseDeg().toFixed(d)}°; }
         }
 
         // ╔══════════════════════════════════════════════════════════════╗
@@ -801,8 +801,8 @@
             ST.src = m;
             // Header toggle
             const dc = document.getElementById('btn_dc'), ac = document.getElementById('btn_ac');
-            dc.className = `mode-btn px-5 py-2 rounded-lg font-semibold text-sm ${m === 'dc' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'}`;
-            ac.className = `mode-btn px-5 py-2 rounded-lg font-semibold text-sm ${m === 'ac' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'}`;
+            dc.className = mode-btn px-5 py-2 rounded-lg font-semibold text-sm ${m === 'dc' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'};
+            ac.className = mode-btn px-5 py-2 rounded-lg font-semibold text-sm ${m === 'ac' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'};
             // Panels
             document.getElementById('dc-tabs').classList.toggle('hidden', m !== 'dc');
             document.getElementById('ac-tabs').classList.toggle('hidden', m !== 'ac');
@@ -820,7 +820,7 @@
         function setCircuitMode(m) {
             ST.cir = m;
             const cid = ST.src === 'dc' ? 'dc-tabs' : 'ac-tabs';
-            document.querySelectorAll(`#${cid} .tab-btn`).forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+            document.querySelectorAll(#${cid} .tab-btn).forEach(b => b.classList.toggle('active', b.dataset.mode === m));
             const multi = m === 'series_dc' || m === 'parallel_dc';
             document.getElementById('r2-group').classList.toggle('hidden', !multi);
             document.getElementById('r3-group').classList.toggle('hidden', !multi);
@@ -1116,12 +1116,12 @@
 
         function renderCards(id, arr) {
             document.getElementById(id).innerHTML = arr.filter(r => r.l).map(r => `
-            <div class="group relative rounded-lg border p-3 ${CM[r.c] || CM.gray} transition-all hover:shadow-md ${r.f ? 'cursor-pointer' : ''}" ${r.f ? `onclick="const f = this.querySelector('.f-view'); if(f) f.classList.toggle('hidden');"` : ''}>
+            <div class="group relative rounded-lg border p-3 ${CM[r.c] || CM.gray} transition-all hover:shadow-md ${r.f ? 'cursor-pointer' : ''}" ${r.f ? onclick="const f = this.querySelector('.f-view'); if(f) f.classList.toggle('hidden');" : ''}>
                 <div class="text-xs font-medium opacity-70 mb-1">${r.l}</div>
                 <div class="text-lg font-bold mono">${r.v} <span class="text-sm font-normal">${r.u}</span></div>
-                ${r.s ? `<div class="text-[10px] mono opacity-60 mt-0.5">${r.s}</div>` : ''}
-                ${r.f ? `<div class="f-view hidden mt-2 pt-2 border-t border-current/20 text-[11px] font-mono opacity-90">${r.f}</div>` : ''}
-                ${r.f ? `<div class="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity" title="Click to view formula"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>` : ''}
+                ${r.s ? <div class="text-[10px] mono opacity-60 mt-0.5">${r.s}</div> : ''}
+                ${r.f ? <div class="f-view hidden mt-2 pt-2 border-t border-current/20 text-[11px] font-mono opacity-90">${r.f}</div> : ''}
+                ${r.f ? <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity" title="Click to view formula"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div> : ''}
             </div>`).join('');
         }
 
@@ -1132,9 +1132,9 @@
             const Req = res.find(r => r.l.includes('R_eq') || r.l.includes('Resistance'));
             el.innerHTML = `
             <div class="flex justify-between"><span class="text-gray-500">V</span><span class="mono font-bold text-amber-600">${V.toFixed(2)} V</span></div>
-            ${I ? `<div class="flex justify-between"><span class="text-gray-500">I</span><span class="mono font-bold text-blue-600">${I.v} ${I.u}</span></div>` : ''}
-            ${Req ? `<div class="flex justify-between"><span class="text-gray-500">R_eq</span><span class="mono font-bold text-red-500">${Req.v} ${Req.u}</span></div>` : ''}
-            ${P ? `<div class="flex justify-between"><span class="text-gray-500">P</span><span class="mono font-bold text-green-600">${P.v} ${P.u}</span></div>` : ''}`;
+            ${I ? <div class="flex justify-between"><span class="text-gray-500">I</span><span class="mono font-bold text-blue-600">${I.v} ${I.u}</span></div> : ''}
+            ${Req ? <div class="flex justify-between"><span class="text-gray-500">R_eq</span><span class="mono font-bold text-red-500">${Req.v} ${Req.u}</span></div> : ''}
+            ${P ? <div class="flex justify-between"><span class="text-gray-500">P</span><span class="mono font-bold text-green-600">${P.v} ${P.u}</span></div> : ''}`;
         }
 
         function renderQuickAC(Z, deg, Ip, state, col) {
@@ -1170,7 +1170,7 @@
                 type: 'line',
                 data: {
                     labels: [], datasets: [
-                        { label: 'Src', data: [], borderColor: 'rgba(156,163,175,0.8)', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, tension: 0.4 },
+                        { label: 'Src', data: [], borderColor: 'rgba(156,163,175,0.😎', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, tension: 0.4 },
                         { label: 'R', data: [], borderColor: 'rgba(239,68,68,1)', borderWidth: 2, pointRadius: 0, tension: 0.4 },
                         { label: 'L', data: [], borderColor: 'rgba(59,130,246,1)', borderWidth: 2, pointRadius: 0, tension: 0.4 },
                         { label: 'C', data: [], borderColor: 'rgba(16,185,129,1)', borderWidth: 2, pointRadius: 0, tension: 0.4 }
@@ -1183,7 +1183,7 @@
                         x: { title: { display: true, text: 'Time (ms)', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 12 } },
                         y: { title: { display: true, text: 'Amplitude', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } }
                     },
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(3)}` } } }
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ${c.dataset.label}: ${c.parsed.y.toFixed(3)} } } }
                 }
             });
         }
@@ -1207,7 +1207,7 @@
                         y: { title: { display: true, text: '|Z| (Ω)', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } },
                         yI: { position: 'right', title: { display: true, text: '|I| (A)', font: { family: 'Inter', size: 11 } }, grid: { drawOnChartArea: false }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } }
                     },
-                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}` } } }
+                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: c => ${c.dataset.label}: ${c.parsed.y.toFixed(2)} } } }
                 }
             });
         }
@@ -1252,7 +1252,7 @@
                 const t = i * dt;
                 t_.push((t * 1000).toFixed(1));
                 if (mode === 'series') {
-                    // FIX: Use current I (= V_R direction) as phase 0°, matching the
+                    // FIX: Use current I 😊 V_R direction) as phase 0°, matching the
                     // phasor diagram's "Reference: Current at 0°" label.
                     // V_s leads the current by pRad (V_s = Z·I, angle of Z = pRad).
                     d0.push(CE.instV(V,       w, t,  pRad + po));             // V_s leads I by pRad
@@ -1289,7 +1289,7 @@
             ST.anim = !ST.anim;
             const b = document.getElementById('btn_anim');
             b.textContent = ST.anim ? '⏸ Pause' : '▶ Play';
-            b.className = `px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${ST.anim ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`;
+            b.className = px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${ST.anim ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'};
             if (!ST.anim && ST.src === 'ac' && ST.cir !== 'resonance') updateWave();
         }
 
@@ -1339,9 +1339,9 @@
             const desc = document.getElementById('phasor_desc');
             if (desc) {
                 const Xstr = X_val >= 0
-                    ? `+j${X_val.toFixed(2)}`
-                    : `−j${Math.abs(X_val).toFixed(2)}`;
-                desc.textContent = `Z = ${R_val.toFixed(2)} ${Xstr} Ω  |  |Z| = ${Zmag.toFixed(2)} Ω ∠ ${pDeg.toFixed(2)}°`;
+                    ? +j${X_val.toFixed(2)}
+                    : −j${Math.abs(X_val).toFixed(2)};
+                desc.textContent = Z = ${R_val.toFixed(2)} ${Xstr} Ω  |  |Z| = ${Zmag.toFixed(2)} Ω ∠ ${pDeg.toFixed(2)}°;
             }
 
             // ── Scale: fit the largest component in the plot area ──
@@ -1410,7 +1410,7 @@
                     ctx.stroke(); ctx.setLineDash([]);
                     const midAng = -endAng / 2 + (ccw ? -Math.PI/12 : Math.PI/12);
                     ctx.font = '10px JetBrains Mono'; ctx.fillStyle = color; ctx.textAlign = 'center';
-                    ctx.fillText(`θ=${pDeg.toFixed(1)}°`,
+                    ctx.fillText(θ=${pDeg.toFixed(1)}°,
                         cx + (aR + 18) * Math.cos(midAng),
                         cy + (aR + 18) * Math.sin(midAng));
                 }
@@ -1458,8 +1458,8 @@
             // ── Z info-box (bottom-right) ──
             if (Zc) {
                 const R_v = Zc.re, X_v = Zc.im;
-                const zRect  = `Z = ${R_v.toFixed(2)} ${X_v >= 0 ? '+' : '−'} j${Math.abs(X_v).toFixed(2)} Ω`;
-                const zPolar = `|Z| = ${Zc.mag().toFixed(2)} Ω  ∠ ${pDeg.toFixed(2)}°`;
+                const zRect  = Z = ${R_v.toFixed(2)} ${X_v >= 0 ? '+' : '−'} j${Math.abs(X_v).toFixed(2)} Ω;
+                const zPolar = |Z| = ${Zc.mag().toFixed(2)} Ω  ∠ ${pDeg.toFixed(2)}°;
                 const bx = W - 10, by = H - 44, bw = 196, bh = 38;
                 ctx.save();
                 ctx.globalAlpha = 0.9;
@@ -1577,3 +1577,4 @@
 </body>
 
 </html>
+cdn.tailwindcss.com
