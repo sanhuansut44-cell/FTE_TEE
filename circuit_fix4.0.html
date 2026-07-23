@@ -706,7 +706,27 @@
                             <span id="status-text">Ready</span>
                         </div>
                     </div>
+
+                    <!-- Topology Quick Presets Bar -->
+                    <div class="w-full flex flex-wrap items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-200 mt-1 gap-2">
+                        <div class="flex flex-wrap items-center gap-1.5 text-xs font-bold text-slate-700">
+                            <span>⚡ สร้างวงจรอัตโนมัติ:</span>
+                            <button onclick="build_preset_topology('series')" class="px-2.5 py-1 rounded bg-blue-100 text-blue-800 hover:bg-blue-200 font-semibold border border-blue-300 shadow-sm transition-all flex items-center gap-1">
+                                <span>🔗</span><span>วงจรอนุกรม (Series)</span>
+                            </button>
+                            <button onclick="build_preset_topology('parallel')" class="px-2.5 py-1 rounded bg-purple-100 text-purple-800 hover:bg-purple-200 font-semibold border border-purple-300 shadow-sm transition-all flex items-center gap-1">
+                                <span>║</span><span>วงจรขนาน (Parallel)</span>
+                            </button>
+                            <button onclick="build_preset_topology('mixed')" class="px-2.5 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 font-semibold border border-amber-300 shadow-sm transition-all flex items-center gap-1">
+                                <span>🔀</span><span>วงจรผสม (Mixed)</span>
+                            </button>
+                        </div>
+                        <button onclick="clear_builder_canvas()" class="px-2.5 py-1 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold border border-rose-200 text-xs flex items-center gap-1">
+                            <span>🧹</span><span>ล้างกระดาน (Clear)</span>
+                        </button>
+                    </div>
                 </div>
+
 
                 <!-- Canvas Workspace -->
                 <div id="circuit-map" class="w-full h-[520px] relative">
@@ -1169,7 +1189,98 @@
             move_component(comp.id, new Coordinate(x, y));
             register_component_events(comp_g);
             update_component_label(comp.id);
+            return comp;
         }
+
+        function clear_builder_canvas() {
+            component_list = [];
+            node_list = [];
+            connection_list = [];
+            document.getElementById("connections").innerHTML = "";
+            document.getElementById("simulation-overlay").innerHTML = "";
+            document.getElementById("component-labels").innerHTML = "";
+            document.getElementById("multimeter-probes").innerHTML = "";
+            const circuit = document.getElementById("circuit");
+            const comps = Array.from(circuit.querySelectorAll(".component"));
+            comps.forEach(c => circuit.removeChild(c));
+            stop_circuit_simulation();
+            document.getElementById("simulation-content").innerHTML = '<p class="text-gray-400 italic">กระดานว่างเปล่า ลากอุปกรณ์หรือเลือกกดปุ่มสร้างวงจรอัตโนมัติด้านบน</p>';
+        }
+
+        function build_preset_topology(type) {
+            clear_builder_canvas();
+            
+            if (type === 'series') {
+                const p1 = create_component_on_canvas("ac_power", 180, 250);
+                const r1 = create_component_on_canvas("resistor", 480, 150);
+                const l1 = create_component_on_canvas("inductor", 780, 150);
+                const c1 = create_component_on_canvas("capacitor", 1080, 150);
+                const g1 = create_component_on_canvas("ground", 180, 420);
+
+                setTimeout(() => {
+                    if (p1 && r1 && l1 && c1 && g1) {
+                        connect_nodes_by_ids(p1.nodes[0].node_id, r1.nodes[0].node_id);
+                        connect_nodes_by_ids(r1.nodes[1].node_id, l1.nodes[0].node_id);
+                        connect_nodes_by_ids(l1.nodes[1].node_id, c1.nodes[0].node_id);
+                        connect_nodes_by_ids(c1.nodes[1].node_id, g1.nodes[0].node_id);
+                        connect_nodes_by_ids(g1.nodes[0].node_id, p1.nodes[1].node_id);
+                        run_circuit_simulation();
+                    }
+                }, 80);
+            } else if (type === 'parallel') {
+                const p1 = create_component_on_canvas("ac_power", 180, 250);
+                const r1 = create_component_on_canvas("resistor", 500, 250);
+                const l1 = create_component_on_canvas("inductor", 800, 250);
+                const c1 = create_component_on_canvas("capacitor", 1100, 250);
+
+                setTimeout(() => {
+                    if (p1 && r1 && l1 && c1) {
+                        connect_nodes_by_ids(p1.nodes[0].node_id, r1.nodes[0].node_id);
+                        connect_nodes_by_ids(r1.nodes[0].node_id, l1.nodes[0].node_id);
+                        connect_nodes_by_ids(l1.nodes[0].node_id, c1.nodes[0].node_id);
+                        connect_nodes_by_ids(p1.nodes[1].node_id, r1.nodes[1].node_id);
+                        connect_nodes_by_ids(r1.nodes[1].node_id, l1.nodes[1].node_id);
+                        connect_nodes_by_ids(l1.nodes[1].node_id, c1.nodes[1].node_id);
+                        run_circuit_simulation();
+                    }
+                }, 80);
+            } else if (type === 'mixed') {
+                const p1 = create_component_on_canvas("ac_power", 180, 250);
+                const r1 = create_component_on_canvas("resistor", 450, 250);
+                const r2 = create_component_on_canvas("resistor", 750, 150);
+                const l1 = create_component_on_canvas("inductor", 750, 350);
+                const c1 = create_component_on_canvas("capacitor", 1050, 350);
+
+                setTimeout(() => {
+                    if (p1 && r1 && r2 && l1 && c1) {
+                        connect_nodes_by_ids(p1.nodes[0].node_id, r1.nodes[0].node_id);
+                        connect_nodes_by_ids(r1.nodes[1].node_id, r2.nodes[0].node_id);
+                        connect_nodes_by_ids(r1.nodes[1].node_id, l1.nodes[0].node_id);
+                        connect_nodes_by_ids(l1.nodes[1].node_id, c1.nodes[0].node_id);
+                        connect_nodes_by_ids(r2.nodes[1].node_id, c1.nodes[1].node_id);
+                        connect_nodes_by_ids(c1.nodes[1].node_id, p1.nodes[1].node_id);
+                        run_circuit_simulation();
+                    }
+                }, 80);
+            }
+        }
+
+        function connect_nodes_by_ids(n1_id, n2_id) {
+            const n1 = get_node_by_id(n1_id);
+            const n2 = get_node_by_id(n2_id);
+            if (!n1 || !n2) return;
+            const conn = new Connection(n1_id, n1.base_component_id, n2_id, n2.base_component_id);
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("id", conn.id);
+            line.setAttribute("stroke", "#475569");
+            line.setAttribute("stroke-width", "3");
+            line.setAttribute("x1", n1.position.x); line.setAttribute("y1", n1.position.y);
+            line.setAttribute("x2", n2.position.x); line.setAttribute("y2", n2.position.y);
+            document.getElementById("connections").appendChild(line);
+            connection_list.push(conn);
+        }
+
+
 
         function register_component_events(comp_g) {
             comp_g.addEventListener("mousedown", (e) => {
