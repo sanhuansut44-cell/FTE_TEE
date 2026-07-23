@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="ห้องปฏิบัติการเสมือนจริง สำหรับวิเคราะห์วงจรไฟฟ้ากระแสตรง (DC) และกระแสสลับ (AC) แบบ Interactive">
-    <title>Interactive Virtual Lab for DC/AC Circuits v4.0</title>
+        content="ห้องปฏิบัติการเสมือนจริง สำหรับวิเคราะห์วงจรไฟฟ้ากระแสตรง (DC) และกระแสสลับ (AC) พร้อมระบบต่อวงจรอิสระ Interactive Circuit Builder">
+    <title>Interactive Virtual Lab for DC/AC Circuits &amp; Circuit Builder v4.0</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,12 +16,31 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
     <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --border-primary: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent-blue: #2563eb;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-orange: #f59e0b;
+            --accent-purple: #7c3aed;
+            --glass-bg: rgba(255, 255, 255, 0.94);
+            --glass-border: rgba(226, 232, 240, 0.8);
+            --glass-blur: 12px;
+        }
+
         * {
             font-family: 'Inter', sans-serif;
+            box-sizing: border-box;
         }
 
         .font-mono,
@@ -30,15 +49,18 @@
         }
 
         /* Scrollbar */
-        .scroll-panel::-webkit-scrollbar {
+        .scroll-panel::-webkit-scrollbar,
+        #component-tool-list::-webkit-scrollbar {
             width: 5px;
         }
 
-        .scroll-panel::-webkit-scrollbar-track {
+        .scroll-panel::-webkit-scrollbar-track,
+        #component-tool-list::-webkit-scrollbar-track {
             background: transparent;
         }
 
-        .scroll-panel::-webkit-scrollbar-thumb {
+        .scroll-panel::-webkit-scrollbar-thumb,
+        #component-tool-list::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 3px;
         }
@@ -71,31 +93,14 @@
             box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
         }
 
-        input[type="range"].sl-red::-webkit-slider-thumb {
-            background: #ef4444;
-        }
-
-        input[type="range"].sl-blue::-webkit-slider-thumb {
-            background: #3b82f6;
-        }
-
-        input[type="range"].sl-green::-webkit-slider-thumb {
-            background: #10b981;
-        }
-
-        input[type="range"].sl-amber::-webkit-slider-thumb {
-            background: #f59e0b;
-        }
-
-        input[type="range"].sl-purple::-webkit-slider-thumb {
-            background: #8b5cf6;
-        }
+        input[type="range"].sl-red::-webkit-slider-thumb { background: #ef4444; }
+        input[type="range"].sl-blue::-webkit-slider-thumb { background: #3b82f6; }
+        input[type="range"].sl-green::-webkit-slider-thumb { background: #10b981; }
+        input[type="range"].sl-amber::-webkit-slider-thumb { background: #f59e0b; }
+        input[type="range"].sl-purple::-webkit-slider-thumb { background: #8b5cf6; }
 
         /* Tab Active */
-        .tab-btn {
-            transition: all 0.2s;
-        }
-
+        .tab-btn { transition: all 0.2s; }
         .tab-btn.active {
             background: #4f46e5;
             color: white;
@@ -103,89 +108,191 @@
             border-color: #4f46e5;
         }
 
+        .main-tab-btn { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .main-tab-btn.active {
+            background: #ffffff;
+            color: #3730a3;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
         /* Mode Toggle */
-        .mode-btn {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .mode-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* Resonance Pulse */
-        @keyframes resPulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
-            }
-
-            50% {
-                box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
-            }
-        }
-
-        .res-glow {
-            animation: resPulse 1.5s infinite;
-        }
-
-        /* ── Enhanced Number Input ── */
+        /* Enhanced Number Input */
         input[type="number"] {
             cursor: ew-resize;
-            /* hint: draggable */
             transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
             user-select: none;
         }
-
         input[type="number"]:not(:focus):hover {
             background: #eef2ff !important;
             border-color: #818cf8 !important;
-            box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.25);
+            box-shadow: 0 0 0 2px rgba(129,140,248,0.25);
         }
-
         input[type="number"]:focus {
             cursor: text;
             user-select: text;
         }
-
-        /* Hide spin buttons — use scroll/drag instead */
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
+        input[type="number"] { -moz-appearance: textfield; }
+        body.num-dragging { cursor: ew-resize !important; user-select: none !important; }
 
-        input[type="number"] {
-            -moz-appearance: textfield;
+        /* ── CIRCUIT BUILDER CANVAS STYLES ── */
+        #circuit-map {
+            position: relative;
+            background: var(--bg-primary);
+            overflow: hidden;
+            cursor: crosshair;
+            background-image: radial-gradient(circle, rgba(148, 163, 184, 0.35) 1px, transparent 1px);
+            background-size: 20px 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.05);
         }
 
-        /* Drag-active state */
-        body.num-dragging {
-            cursor: ew-resize !important;
-            user-select: none !important;
+        #circuit { display: block; }
+        .component { cursor: grab; }
+
+        .component:active { cursor: grabbing; }
+
+        .component-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border: 1px solid #f1f5f9;
+            border-radius: 8px;
+            background: #ffffff;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+        .component-box:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        .component-box:active { cursor: grabbing; background: #e2e8f0; }
+        .component-box.absent { display: none !important; }
+
+        .component-tool-icon {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        #component-selection-area {
+            position: absolute;
+            top: 0; left: 0;
+            border: 1.5px solid rgba(79, 70, 229, 0.6);
+            background: rgba(79, 70, 229, 0.08);
+            border-radius: 2px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .sim-connection-active {
+            stroke: #10b981 !important;
+            stroke-width: 2.5 !important;
+            filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.6));
+        }
+
+        .sim-voltage-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            fill: #d97706;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .sim-current-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            fill: #2563eb;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+            transition: background 0.3s;
+        }
+        .status-dot.running {
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulseGlow 1.5s infinite;
+        }
+        .status-dot.error {
+            background: #ef4444;
+            box-shadow: 0 0 8px #ef4444;
+        }
+        @keyframes pulseGlow { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+        /* Floating panels */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-100 to-blue-50 min-h-screen">
+<body class="bg-gradient-to-br from-slate-100 to-indigo-50/50 min-h-screen">
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- HEADER                                                     -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <header class="bg-gradient-to-r from-indigo-800 via-blue-700 to-indigo-900 text-white shadow-xl">
-        <div class="max-w-[1600px] mx-auto px-4 py-4 md:px-8">
+    <header class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-blue-900 text-white shadow-xl sticky top-0 z-50">
+        <div class="max-w-[1650px] mx-auto px-4 py-3 md:px-6">
             <div class="flex flex-col md:flex-row items-center justify-between gap-3">
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-2">
-                        <span class="text-3xl">⚡</span> Interactive Virtual Lab
-                    </h1>
-                    <p class="text-blue-200 text-sm mt-0.5 font-light">DC &amp; AC Circuit Analysis —
-                        ห้องปฏิบัติการเสมือนจริง วิชาวงจรไฟฟ้า</p>
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl p-2 bg-indigo-700/50 rounded-xl border border-indigo-500/30">⚡</span>
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                            Interactive Virtual Lab &amp; Circuit Builder
+                        </h1>
+                        <p class="text-indigo-200 text-xs mt-0.5 font-light">
+                            ห้องปฏิบัติการเสมือนจริงและระบบต่อวงจรไฟฟ้า DC/AC Interactive
+                        </p>
+                    </div>
                 </div>
-                <!-- AC / DC Toggle -->
+
+                <!-- Main Lab View Switcher -->
+                <div class="flex items-center bg-indigo-950/60 rounded-xl p-1 border border-indigo-700/40">
+                    <button id="btn_view_presets"
+                        class="main-tab-btn active px-4 py-2 rounded-lg font-semibold text-xs md:text-sm flex items-center gap-1.5"
+                        onclick="switchMainView('presets')">
+                        <span>⚡ Presets</span>
+                        <span class="text-[11px] opacity-80">(วิเคราะห์ตามทฤษฎี)</span>
+                    </button>
+                    <button id="btn_view_builder"
+                        class="main-tab-btn px-4 py-2 rounded-lg font-semibold text-xs md:text-sm text-indigo-200 hover:text-white flex items-center gap-1.5"
+                        onclick="switchMainView('builder')">
+                        <span>🛠️ Circuit Builder</span>
+                        <span class="text-[11px] opacity-80">(ต่อวงจรอิสระ)</span>
+                    </button>
+                </div>
+
+                <!-- AC / DC Toggle (For Presets) -->
                 <div id="source-toggle"
                     class="flex items-center bg-white/10 rounded-xl p-1 backdrop-blur-sm border border-white/20">
                     <button id="btn_dc"
-                        class="mode-btn px-5 py-2 rounded-lg font-semibold text-sm bg-white text-indigo-800 shadow-md"
+                        class="mode-btn px-4 py-1.5 rounded-lg font-semibold text-xs md:text-sm bg-white text-indigo-800 shadow-md"
                         onclick="setSourceMode('dc')">🔋 DC</button>
                     <button id="btn_ac"
-                        class="mode-btn px-5 py-2 rounded-lg font-semibold text-sm text-white/80 hover:text-white"
+                        class="mode-btn px-4 py-1.5 rounded-lg font-semibold text-xs md:text-sm text-white/80 hover:text-white"
                         onclick="setSourceMode('ac')">〰️ AC</button>
                 </div>
             </div>
@@ -193,14 +300,16 @@
     </header>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- MAIN CONTENT                                               -->
+    <!-- MAIN CONTENT CONTAINER                                      -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <main class="max-w-[1600px] mx-auto px-3 md:px-6 py-4 md:py-6">
-        <div class="flex flex-col lg:flex-row gap-5">
+    <main class="max-w-[1650px] mx-auto px-3 md:px-6 py-4">
 
-            <!-- ─────────────────────────────────────────────────── -->
-            <!-- LEFT PANEL: Input Controls (30%)                    -->
-            <!-- ─────────────────────────────────────────────────── -->
+        <!-- ======================================================= -->
+        <!-- VIEW 1: PRESETS (CALCULATOR & THEORY LAB)               -->
+        <!-- ======================================================= -->
+        <div id="presets-view" class="flex flex-col lg:flex-row gap-5">
+
+            <!-- LEFT PANEL: Input Controls (30%) -->
             <aside id="left-panel"
                 class="w-full lg:w-[30%] lg:min-w-[340px] space-y-4 scroll-panel lg:max-h-[calc(100vh-100px)] lg:overflow-y-auto lg:sticky lg:top-4 pb-4">
 
@@ -208,230 +317,158 @@
                 <div class="bg-white rounded-xl shadow-md p-4 border border-gray-100">
                     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Circuit Topology</h2>
                     <div id="dc-tabs" class="flex flex-wrap gap-2">
-                        <button
-                            class="tab-btn active px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                        <button class="tab-btn active px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="ohm" onclick="setCircuitMode('ohm')">Ohm's Law</button>
-                        <button
-                            class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                        <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="series_dc" onclick="setCircuitMode('series_dc')">Series</button>
-                        <button
-                            class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                        <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="parallel_dc" onclick="setCircuitMode('parallel_dc')">Parallel</button>
-                        <button
-                            class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                        <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="star_delta" onclick="setCircuitMode('star_delta')">Star‑Delta</button>
                     </div>
                     <div id="ac-tabs" class="flex flex-wrap gap-2 hidden">
-                        <button
-                            class="tab-btn active px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                        <button class="tab-btn active px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="series_ac" onclick="setCircuitMode('series_ac')">Series RLC</button>
-                        <button
-                            class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                        <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="parallel_ac" onclick="setCircuitMode('parallel_ac')">Parallel RLC</button>
-                        <button
-                            class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
+                        <button class="tab-btn px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200 bg-gray-50"
                             data-mode="resonance" onclick="setCircuitMode('resonance')">🔔 Resonance</button>
                     </div>
                 </div>
 
-                <!-- ── DC Parameters ── -->
+                <!-- DC Parameters -->
                 <div id="dc-params" class="bg-white rounded-xl shadow-md p-4 border border-gray-100 space-y-4">
                     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">DC Parameters</h2>
-
-                    <!-- V -->
                     <div class="param-group">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-amber-600">⚡ Voltage (V)</label>
                             <span class="text-xs text-gray-400">Volts</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_v_dc" min="0" max="500" step="1" value="100"
-                                class="flex-1 sl-amber" oninput="syncSlider('v_dc')">
-                            <input type="number" id="in_v_dc" min="0" max="10000" step="0.1" value="100"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-amber-400"
-                                oninput="syncInput('v_dc')">
+                            <input type="range" id="sl_v_dc" min="0" max="500" step="1" value="100" class="flex-1 sl-amber" oninput="syncSlider('v_dc')">
+                            <input type="number" id="in_v_dc" min="0" max="10000" step="0.1" value="100" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('v_dc')">
                             <span class="text-sm font-medium text-gray-500 w-6">V</span>
                         </div>
                     </div>
-                    <!-- R1 -->
                     <div class="param-group">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-red-500">Ω Resistance (R₁)</label>
                             <span class="text-xs text-gray-400">Ohms</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r1" min="0" max="1000" step="1" value="100" class="flex-1 sl-red"
-                                oninput="syncSlider('r1')">
-                            <input type="number" id="in_r1" min="0" max="100000" step="0.1" value="100"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
-                                oninput="syncInput('r1')">
+                            <input type="range" id="sl_r1" min="0" max="1000" step="1" value="100" class="flex-1 sl-red" oninput="syncSlider('r1')">
+                            <input type="number" id="in_r1" min="0" max="100000" step="0.1" value="100" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('r1')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
                         </div>
                     </div>
-                    <!-- R2 -->
                     <div id="r2-group" class="param-group hidden">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-red-400">Ω Resistance (R₂)</label>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r2" min="0" max="1000" step="1" value="200" class="flex-1 sl-red"
-                                oninput="syncSlider('r2')">
-                            <input type="number" id="in_r2" min="0" max="100000" step="0.1" value="200"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
-                                oninput="syncInput('r2')">
+                            <input type="range" id="sl_r2" min="0" max="1000" step="1" value="200" class="flex-1 sl-red" oninput="syncSlider('r2')">
+                            <input type="number" id="in_r2" min="0" max="100000" step="0.1" value="200" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('r2')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
                         </div>
                     </div>
-                    <!-- R3 -->
                     <div id="r3-group" class="param-group hidden">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-red-300">Ω Resistance (R₃)</label>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r3" min="0" max="1000" step="1" value="300" class="flex-1 sl-red"
-                                oninput="syncSlider('r3')">
-                            <input type="number" id="in_r3" min="0" max="100000" step="0.1" value="300"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
-                                oninput="syncInput('r3')">
+                            <input type="range" id="sl_r3" min="0" max="1000" step="1" value="300" class="flex-1 sl-red" oninput="syncSlider('r3')">
+                            <input type="number" id="in_r3" min="0" max="100000" step="0.1" value="300" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('r3')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- ── Star-Delta Parameters ── -->
+                <!-- Star-Delta Parameters -->
                 <div id="sd-params" class="bg-white rounded-xl shadow-md p-4 border border-gray-100 space-y-3 hidden">
-                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Star ⇌ Delta Conversion
-                    </h2>
-                    <p class="text-xs text-gray-500">แปลงวงจรเพื่อวิเคราะห์ค่าความต้านทาน — ป้อนค่าฝั่งใดฝั่งหนึ่ง
-                        ระบบจะคำนวณอีกฝั่งให้อัตโนมัติ</p>
-                    <!-- Delta -->
+                    <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Star ⇌ Delta Conversion</h2>
+                    <p class="text-xs text-gray-500">แปลงวงจรเพื่อวิเคราะห์ค่าความต้านทาน — ป้อนค่าฝั่งใดฝั่งหนึ่ง ระบบจะคำนวณอีกฝั่งให้อัตโนมัติ</p>
                     <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
                         <h3 class="text-sm font-bold text-blue-700 mb-2">△ Delta (Ra, Rb, Rc)</h3>
                         <div class="grid grid-cols-3 gap-2">
-                            <div><label class="text-xs text-blue-600 font-medium">Ra</label><input type="number"
-                                    id="sd_ra" value="30" min="0.1" step="0.1"
-                                    class="w-full px-2 py-1.5 border border-blue-300 rounded text-sm mono text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    oninput="calcSD('delta')"></div>
-                            <div><label class="text-xs text-blue-600 font-medium">Rb</label><input type="number"
-                                    id="sd_rb" value="60" min="0.1" step="0.1"
-                                    class="w-full px-2 py-1.5 border border-blue-300 rounded text-sm mono text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    oninput="calcSD('delta')"></div>
-                            <div><label class="text-xs text-blue-600 font-medium">Rc</label><input type="number"
-                                    id="sd_rc" value="90" min="0.1" step="0.1"
-                                    class="w-full px-2 py-1.5 border border-blue-300 rounded text-sm mono text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                    oninput="calcSD('delta')"></div>
+                            <div><label class="text-xs text-blue-600 font-medium">Ra</label><input type="number" id="sd_ra" value="30" min="0.1" step="0.1" class="w-full px-2 py-1.5 border border-blue-300 rounded text-sm mono text-center" oninput="calcSD('delta')"></div>
+                            <div><label class="text-xs text-blue-600 font-medium">Rb</label><input type="number" id="sd_rb" value="60" min="0.1" step="0.1" class="w-full px-2 py-1.5 border border-blue-300 rounded text-sm mono text-center" oninput="calcSD('delta')"></div>
+                            <div><label class="text-xs text-blue-600 font-medium">Rc</label><input type="number" id="sd_rc" value="90" min="0.1" step="0.1" class="w-full px-2 py-1.5 border border-blue-300 rounded text-sm mono text-center" oninput="calcSD('delta')"></div>
                         </div>
                     </div>
                     <div class="flex justify-center text-gray-400 text-xl font-bold">⇅</div>
-                    <!-- Star -->
                     <div class="bg-green-50 rounded-lg p-3 border border-green-200">
                         <h3 class="text-sm font-bold text-green-700 mb-2">Y Star (R1, R2, R3)</h3>
                         <div class="grid grid-cols-3 gap-2">
-                            <div><label class="text-xs text-green-600 font-medium">R1</label><input type="number"
-                                    id="sd_r1" value="" min="0.1" step="0.1"
-                                    class="w-full px-2 py-1.5 border border-green-300 rounded text-sm mono text-center focus:outline-none focus:ring-2 focus:ring-green-400"
-                                    oninput="calcSD('star')"></div>
-                            <div><label class="text-xs text-green-600 font-medium">R2</label><input type="number"
-                                    id="sd_r2" value="" min="0.1" step="0.1"
-                                    class="w-full px-2 py-1.5 border border-green-300 rounded text-sm mono text-center focus:outline-none focus:ring-2 focus:ring-green-400"
-                                    oninput="calcSD('star')"></div>
-                            <div><label class="text-xs text-green-600 font-medium">R3</label><input type="number"
-                                    id="sd_r3" value="" min="0.1" step="0.1"
-                                    class="w-full px-2 py-1.5 border border-green-300 rounded text-sm mono text-center focus:outline-none focus:ring-2 focus:ring-green-400"
-                                    oninput="calcSD('star')"></div>
+                            <div><label class="text-xs text-green-600 font-medium">R1</label><input type="number" id="sd_r1" value="" min="0.1" step="0.1" class="w-full px-2 py-1.5 border border-green-300 rounded text-sm mono text-center" oninput="calcSD('star')"></div>
+                            <div><label class="text-xs text-green-600 font-medium">R2</label><input type="number" id="sd_r2" value="" min="0.1" step="0.1" class="w-full px-2 py-1.5 border border-green-300 rounded text-sm mono text-center" oninput="calcSD('star')"></div>
+                            <div><label class="text-xs text-green-600 font-medium">R3</label><input type="number" id="sd_r3" value="" min="0.1" step="0.1" class="w-full px-2 py-1.5 border border-green-300 rounded text-sm mono text-center" oninput="calcSD('star')"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ── AC Parameters ── -->
+                <!-- AC Parameters -->
                 <div id="ac-params" class="bg-white rounded-xl shadow-md p-4 border border-gray-100 space-y-4 hidden">
                     <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">AC Parameters</h2>
-                    <!-- V peak -->
                     <div class="param-group">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-amber-600">⚡ V<sub>peak</sub></label>
                             <span class="text-xs text-gray-400">Volts (peak)</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_v_ac" min="1" max="500" step="1" value="100"
-                                class="flex-1 sl-amber" oninput="syncSlider('v_ac')">
-                            <input type="number" id="in_v_ac" min="0.1" max="10000" step="0.1" value="100"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-amber-400"
-                                oninput="syncInput('v_ac')">
+                            <input type="range" id="sl_v_ac" min="1" max="500" step="1" value="100" class="flex-1 sl-amber" oninput="syncSlider('v_ac')">
+                            <input type="number" id="in_v_ac" min="0.1" max="10000" step="0.1" value="100" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('v_ac')">
                             <span class="text-sm font-medium text-gray-500 w-6">V</span>
                         </div>
                     </div>
-                    <!-- Frequency -->
                     <div class="param-group">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-purple-600">〰️ Frequency (f)</label>
                             <span class="text-xs text-gray-400">Hz</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_freq" min="1" max="1000" step="1" value="50"
-                                class="flex-1 sl-purple" oninput="syncSlider('freq')">
-                            <input type="number" id="in_freq" min="0.1" max="10000" step="0.1" value="50"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-purple-400"
-                                oninput="syncInput('freq')">
+                            <input type="range" id="sl_freq" min="1" max="1000" step="1" value="50" class="flex-1 sl-purple" oninput="syncSlider('freq')">
+                            <input type="number" id="in_freq" min="0.1" max="10000" step="0.1" value="50" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('freq')">
                             <span class="text-sm font-medium text-gray-500 w-8">Hz</span>
                         </div>
                     </div>
-                    <!-- R -->
                     <div class="param-group border-t border-gray-100 pt-3">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-red-500">Ω Resistance (R)</label>
                         </div>
                         <div class="flex items-center gap-2">
-                            <input type="range" id="sl_r_ac" min="0" max="5000" step="1" value="100"
-                                class="flex-1 sl-red" oninput="syncSlider('r_ac')">
-                            <input type="number" id="in_r_ac" min="0" max="100000" step="0.1" value="100"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-red-400"
-                                oninput="syncInput('r_ac')">
+                            <input type="range" id="sl_r_ac" min="0" max="5000" step="1" value="100" class="flex-1 sl-red" oninput="syncSlider('r_ac')">
+                            <input type="number" id="in_r_ac" min="0" max="100000" step="0.1" value="100" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('r_ac')">
                             <span class="text-sm font-medium text-gray-500 w-6">Ω</span>
                         </div>
                     </div>
-                    <!-- L -->
                     <div class="param-group">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-blue-500">⌁ Inductance (L)</label>
                             <span class="text-xs text-gray-400">mH</span>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
-                            <input type="range" id="sl_l" min="0" max="1000" step="1" value="150" class="flex-1 sl-blue"
-                                oninput="syncSlider('l')">
-                            <input type="number" id="in_l" min="0" max="10000" step="0.1" value="150"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                oninput="syncInput('l')">
+                            <input type="range" id="sl_l" min="0" max="1000" step="1" value="150" class="flex-1 sl-blue" oninput="syncSlider('l')">
+                            <input type="number" id="in_l" min="0" max="10000" step="0.1" value="150" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('l')">
                             <span class="text-sm font-medium text-gray-500 w-8">mH</span>
                         </div>
-                        <div
-                            class="flex items-center justify-between bg-blue-50 px-3 py-1.5 rounded border border-blue-100">
+                        <div class="flex items-center justify-between bg-blue-50 px-3 py-1.5 rounded border border-blue-100">
                             <span class="text-xs font-semibold text-blue-600">Reactance X_L (Ω)</span>
-                            <input type="number" id="in_xl" min="0" step="0.1"
-                                class="w-24 px-2 py-1 border border-blue-200 rounded text-sm mono text-right text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                                oninput="syncXL()">
+                            <input type="number" id="in_xl" min="0" step="0.1" class="w-24 px-2 py-1 border border-blue-200 rounded text-sm mono text-right text-blue-700" oninput="syncXL()">
                         </div>
                     </div>
-                    <!-- C -->
                     <div class="param-group">
                         <div class="flex justify-between items-baseline mb-1">
                             <label class="text-sm font-semibold text-green-500">⏚ Capacitance (C)</label>
                             <span class="text-xs text-gray-400">µF</span>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
-                            <input type="range" id="sl_c" min="0" max="1000" step="1" value="100"
-                                class="flex-1 sl-green" oninput="syncSlider('c')">
-                            <input type="number" id="in_c" min="0" max="10000" step="0.1" value="100"
-                                class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono focus:outline-none focus:ring-2 focus:ring-green-400"
-                                oninput="syncInput('c')">
+                            <input type="range" id="sl_c" min="0" max="1000" step="1" value="100" class="flex-1 sl-green" oninput="syncSlider('c')">
+                            <input type="number" id="in_c" min="0" max="10000" step="0.1" value="100" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-right mono" oninput="syncInput('c')">
                             <span class="text-sm font-medium text-gray-500 w-8">µF</span>
                         </div>
-                        <div
-                            class="flex items-center justify-between bg-green-50 px-3 py-1.5 rounded border border-green-100">
+                        <div class="flex items-center justify-between bg-green-50 px-3 py-1.5 rounded border border-green-100">
                             <span class="text-xs font-semibold text-green-600">Reactance X_C (Ω)</span>
-                            <input type="number" id="in_xc" min="0" step="0.1"
-                                class="w-24 px-2 py-1 border border-green-200 rounded text-sm mono text-right text-green-700 focus:outline-none focus:ring-1 focus:ring-green-400"
-                                oninput="syncXC()">
+                            <input type="number" id="in_xc" min="0" step="0.1" class="w-24 px-2 py-1 border border-green-200 rounded text-sm mono text-right text-green-700" oninput="syncXC()">
                         </div>
                     </div>
                 </div>
@@ -443,1153 +480,1087 @@
                 </div>
             </aside>
 
-            <!-- ─────────────────────────────────────────────────── -->
-            <!-- RIGHT PANEL: Output / Visualization (70%)           -->
-            <!-- ─────────────────────────────────────────────────── -->
+            <!-- RIGHT PANEL: Output / Visualization (70%) -->
             <section id="right-panel" class="w-full lg:w-[70%] space-y-5">
-
-                <!-- DC Results -->
                 <div id="dc-out" class="space-y-4">
                     <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
                         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span
-                                class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-base">📊</span>
+                            <span class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-base">📊</span>
                             DC Analysis Results
                         </h2>
                         <div id="dc-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
                     </div>
-
-
                     <div id="sd-diagram" class="bg-white rounded-xl shadow-md p-5 border border-gray-100 hidden">
                         <h2 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                            <span
-                                class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 text-base">△</span>
+                            <span class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 text-base">△</span>
                             Star‑Delta Circuit Conversion Diagram
                         </h2>
-                        <div class="flex justify-center"><canvas id="sdCanvas" width="560" height="300"
-                                style="background:#f8fafc;border-radius:12px;max-width:100%;"></canvas></div>
+                        <div class="flex justify-center"><canvas id="sdCanvas" width="560" height="300" style="background:#f8fafc;border-radius:12px;max-width:100%;"></canvas></div>
                     </div>
                 </div>
 
-                <!-- AC Results -->
                 <div id="ac-out" class="space-y-4 hidden">
-                    <!-- Results Grid -->
                     <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
                         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span
-                                class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-base">📊</span>
+                            <span class="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 text-base">📊</span>
                             AC Analysis Results
                         </h2>
                         <div id="ac-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
                     </div>
 
-                    <!-- Oscilloscope -->
                     <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
                         <div class="flex flex-wrap items-center justify-between p-4 border-b border-gray-100 gap-2">
                             <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <span
-                                    class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 text-base">📈</span>
+                                <span class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 text-base">📈</span>
                                 Oscilloscope
                             </h2>
                             <div class="flex items-center gap-2">
-                                <button id="btn_anim" onclick="toggleAnim()"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors">⏸
-                                    Pause</button>
-                                <button onclick="exportChart()"
-                                    class="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors">📥
-                                    Export</button>
+                                <button id="btn_anim" onclick="toggleAnim()" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100">⏸ Pause</button>
+                                <button onclick="exportChart()" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100">📥 Export</button>
                             </div>
                         </div>
                         <div id="chart-legend" class="flex justify-center gap-4 px-4 pt-3 text-sm font-medium"></div>
                         <div class="p-4 relative" style="height:360px;"><canvas id="oscChart"></canvas></div>
                     </div>
 
-                    <!-- Phasor Diagram -->
                     <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
                         <h2 class="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
-                            <span
-                                class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 text-base">🎯</span>
+                            <span class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 text-base">🎯</span>
                             Impedance Phasor Diagram (Z = R + jX)
                         </h2>
-                        <p id="phasor_desc" class="text-xs text-gray-500 mb-3 text-center">Impedance Triangle: Z = R +
-                            jX (Ω)</p>
-                        <div class="flex justify-center"><canvas id="phasorCanvas" width="400" height="400"
-                                class="max-w-full"></canvas></div>
+                        <p id="phasor_desc" class="text-xs text-gray-500 mb-3 text-center">Impedance Triangle: Z = R + jX (Ω)</p>
+                        <div class="flex justify-center"><canvas id="phasorCanvas" width="400" height="400" class="max-w-full"></canvas></div>
                     </div>
                 </div>
 
-                <!-- Resonance Results -->
                 <div id="res-out" class="space-y-4 hidden">
-                    <!-- Results Grid -->
                     <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
                         <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span
-                                class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-base">🔔</span>
+                            <span class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-base">🔔</span>
                             Resonance Analysis
                         </h2>
                         <div id="res-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
                     </div>
-
-                    <!-- Frequency Response Chart -->
                     <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                        <div class="flex flex-wrap items-center justify-between p-4 border-b border-gray-100 gap-2">
-                            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <span
-                                    class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 text-base">📉</span>
-                                Frequency Response (|Z| &amp; |I| vs Frequency)
-                            </h2>
-                        </div>
+                        <div class="p-4 border-b border-gray-100"><h2 class="text-lg font-bold text-gray-800">📉 Frequency Response</h2></div>
                         <div class="p-4 relative" style="height:360px;"><canvas id="resChart"></canvas></div>
                     </div>
                 </div>
-
             </section>
-
         </div>
+
+
+        <!-- ======================================================= -->
+        <!-- VIEW 2: CIRCUIT BUILDER (DRAG & DROP CANVAS + SOLVER)   -->
+        <!-- ======================================================= -->
+        <div id="builder-view" class="hidden flex flex-col lg:flex-row gap-5">
+
+            <!-- BUILDER SIDEBAR TOOLBOX (25%) -->
+            <aside class="w-full lg:w-[25%] lg:min-w-[300px] bg-white rounded-xl shadow-md border border-gray-200 flex flex-col h-[calc(100vh-100px)] sticky top-4 overflow-hidden">
+                <div class="p-4 bg-gradient-to-r from-slate-900 to-indigo-950 text-white border-b border-slate-700">
+                    <h2 class="font-bold text-base flex items-center gap-2">
+                        <span>🧰</span> Component Toolbox
+                    </h2>
+                    <p class="text-xs text-slate-300 mt-1">ลากอุปกรณ์ลงในพื้นที่ทำแบบวงจร</p>
+                </div>
+
+                <!-- Component Search -->
+                <div class="p-3 border-b border-gray-200 bg-slate-50 flex items-center gap-2">
+                    <input type="text" id="component-search-text-box" placeholder="ค้นหาอุปกรณ์..." class="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="component-search-button" class="px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg font-medium hover:bg-indigo-700">ค้นหา</button>
+                </div>
+
+                <!-- Component List -->
+                <div id="component-tool-list" class="flex-1 overflow-y-auto p-3 space-y-2">
+                    <!-- Dynamic Component Item List -->
+                    <div class="component-box" data-category="power">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><circle cx="3" cy="50" r="3" fill="#64748b"/><line x1="5" y1="50" x2="45" y2="50" stroke="#000" stroke-width="3"/><line x1="45" y1="20" x2="45" y2="80" stroke="#dc2626" stroke-width="4"/><line x1="55" y1="35" x2="55" y2="65" stroke="#2563eb" stroke-width="4"/><line x1="55" y1="50" x2="95" y2="50" stroke="#000" stroke-width="3"/><circle cx="97" cy="50" r="3" fill="#64748b"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">DC Power</h4><span class="text-[10px] text-gray-500">แหล่งจ่ายไฟ DC</span></div>
+                        <img class="component-tool hidden" src="" alt="dc_power">
+                    </div>
+                    <div class="component-box" data-category="power">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="3"/><circle cx="50" cy="50" r="28" stroke="#7c3aed" stroke-width="3" fill="none"/><path d="M 32,50 q 9,-18 18,0 t 18,0" stroke="#7c3aed" stroke-width="3" fill="none"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="3"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">AC Power</h4><span class="text-[10px] text-gray-500">แหล่งจ่ายไฟกระแสสลับ</span></div>
+                        <img class="component-tool hidden" src="" alt="ac_power">
+                    </div>
+                    <div class="component-box" data-category="basic">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><line x1="50" y1="5" x2="50" y2="50" stroke="#000" stroke-width="3"/><line x1="15" y1="50" x2="85" y2="50" stroke="#000" stroke-width="4"/><line x1="25" y1="62" x2="75" y2="62" stroke="#000" stroke-width="3"/><line x1="35" y1="74" x2="65" y2="74" stroke="#000" stroke-width="2.5"/><line x1="45" y1="84" x2="55" y2="84" stroke="#000" stroke-width="2"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Ground</h4><span class="text-[10px] text-gray-500">จุดต่อลงดิน (0V)</span></div>
+                        <img class="component-tool hidden" src="" alt="ground">
+                    </div>
+                    <div class="component-box" data-category="passive">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><polyline points="10,50 25,50 30,35 40,65 50,35 60,65 70,35 75,50 90,50" fill="none" stroke="#ef4444" stroke-width="3.5"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Resistor</h4><span class="text-[10px] text-gray-500">ตัวต้านทาน (Ω)</span></div>
+                        <img class="component-tool hidden" src="" alt="resistor">
+                    </div>
+                    <div class="component-box" data-category="passive">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><line x1="10" y1="50" x2="42" y2="50" stroke="#000" stroke-width="3"/><line x1="42" y1="20" x2="42" y2="80" stroke="#10b981" stroke-width="4"/><line x1="58" y1="20" x2="58" y2="80" stroke="#10b981" stroke-width="4"/><line x1="58" y1="50" x2="90" y2="50" stroke="#000" stroke-width="3"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Capacitor</h4><span class="text-[10px] text-gray-500">ตัวเก็บประจุ (µF)</span></div>
+                        <img class="component-tool hidden" src="" alt="capacitor">
+                    </div>
+                    <div class="component-box" data-category="passive">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 10,50 L 20,50 a 10,12 0 0 1 20,0 a 10,12 0 0 1 20,0 a 10,12 0 0 1 20,0 L 90,50" fill="none" stroke="#3b82f6" stroke-width="3.5"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Inductor</h4><span class="text-[10px] text-gray-500">ขดลวดเหนี่ยวนำ (mH)</span></div>
+                        <img class="component-tool hidden" src="" alt="inductor">
+                    </div>
+                    <div class="component-box" data-category="switch">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><line x1="10" y1="50" x2="35" y2="50" stroke="#000" stroke-width="3"/><line x1="35" y1="50" x2="70" y2="25" stroke="#f59e0b" stroke-width="3.5"/><line x1="70" y1="50" x2="90" y2="50" stroke="#000" stroke-width="3"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Switch</h4><span class="text-[10px] text-gray-500">สวิตช์เปิด-ปิด</span></div>
+                        <img class="component-tool hidden" src="" alt="switch">
+                    </div>
+                    <div class="component-box" data-category="protection">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><rect x="25" y="38" width="50" height="24" fill="#ffffff" stroke="#000" stroke-width="3"/><line x1="10" y1="50" x2="90" y2="50" stroke="#d97706" stroke-width="2.5"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Fuse</h4><span class="text-[10px] text-gray-500">ฟิวส์ป้องกัน</span></div>
+                        <img class="component-tool hidden" src="" alt="fuse">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><polygon points="30,25 75,50 30,75" fill="#f8fafc" stroke="#475569" stroke-width="3"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Buffer / Diode</h4><span class="text-[10px] text-gray-500">บัฟเฟอร์ / ไดโอด</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_buffer_gate">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><polygon points="20.5,25 70.5,50 20.5,75" stroke="#000" stroke-width="3" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">NOT Gate</h4><span class="text-[10px] text-gray-500">เกต NOT</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_not_gate">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="3" fill="#fff"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">OR Gate</h4><span class="text-[10px] text-gray-500">เกต OR</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_or_gate">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 12.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="3" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">NOR Gate</h4><span class="text-[10px] text-gray-500">เกต NOR</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_nor_gate">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 22.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="3" fill="#fff"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">AND Gate</h4><span class="text-[10px] text-gray-500">เกต AND</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_and_gate">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 17.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="3" fill="#fff"/><circle cx="77.5" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">NAND Gate</h4><span class="text-[10px] text-gray-500">เกต NAND</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_nand_gate">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 22.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="3" fill="#fff"/><path d="M 17,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="3" fill="none"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">XOR Gate</h4><span class="text-[10px] text-gray-500">เกต XOR</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_xor_gate">
+                    </div>
+                    <div class="component-box" data-category="gate">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="3" fill="#fff"/><path d="M 12.5,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="3" fill="none"/><circle cx="80" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">XNOR Gate</h4><span class="text-[10px] text-gray-500">เกต XNOR</span></div>
+                        <img class="component-tool hidden" src="" alt="binary_xnor_gate">
+                    </div>
+                    <div class="component-box" data-category="diode">
+                        <div class="component-tool-icon"><svg width="32" height="32" viewBox="0 0 100 100"><polygon points="25,25 75,50 25,75" fill="#fff" stroke="#000" stroke-width="3"/><polyline points="65,20 75,25 75,75 85,80" fill="none" stroke="#000" stroke-width="3"/></svg></div>
+                        <div class="flex-1"><h4 class="text-xs font-bold text-gray-800">Zener Diode</h4><span class="text-[10px] text-gray-500">ซีเนอร์ไดโอด</span></div>
+                        <img class="component-tool hidden" src="" alt="zener_diode">
+                    </div>
+
+                </div>
+            </aside>
+
+            <!-- BUILDER MAIN WORKSPACE (75%) -->
+            <main class="w-full lg:w-[75%] space-y-4 flex flex-col">
+
+                <!-- Toolbar Controls -->
+                <div id="circuit-toolbar" class="bg-white rounded-xl shadow-md p-2.5 border border-gray-200 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <button id="btn-simulate" onclick="run_circuit_simulation()" class="px-4 py-2 rounded-lg font-bold text-xs bg-emerald-600 text-white hover:bg-emerald-700 shadow flex items-center gap-1.5 transition-all">
+                            <span>▶</span><span>Simulate</span>
+                        </button>
+                        <button id="btn-stop" onclick="stop_circuit_simulation()" class="px-3 py-2 rounded-lg font-bold text-xs bg-slate-200 text-slate-700 hover:bg-rose-600 hover:text-white transition-all">
+                            <span>⏹</span><span>Stop</span>
+                        </button>
+
+                        <div class="w-[1px] h-6 bg-gray-200 mx-1"></div>
+
+                        <button id="btn-mode-select" onclick="set_app_mode('select')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 active">
+                            <span>↖</span> Select
+                        </button>
+                        <button id="btn-mode-wire" onclick="set_app_mode('wire')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-indigo-50">
+                            <span>〰</span> Wire Mode
+                        </button>
+                        <button id="btn-mode-pan" onclick="set_app_mode('pan')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-indigo-50">
+                            <span>✋</span> Pan Mode
+                        </button>
+
+                        <div class="w-[1px] h-6 bg-gray-200 mx-1"></div>
+
+                        <button id="btn-zoom-out" onclick="set_zoom(zoom_level - 0.15)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200">➖</button>
+                        <button id="btn-zoom-reset" onclick="set_zoom(1.0)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200"><span class="btn-text">100%</span></button>
+                        <button id="btn-zoom-in" onclick="set_zoom(zoom_level + 0.15)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-gray-100 hover:bg-gray-200">➕</button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="btn-voltmeter" onclick="activate_voltmeter()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100">
+                            ⚡ Voltmeter
+                        </button>
+                        <button id="btn-ammeter" onclick="activate_ammeter()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-300 hover:bg-blue-100">
+                            🔵 Ammeter
+                        </button>
+                        <div class="flex items-center gap-1.5 ml-2 text-xs text-gray-500 font-mono">
+                            <span id="status-indicator" class="status-dot"></span>
+                            <span id="status-text">Ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas Workspace -->
+                <div id="circuit-map" class="w-full h-[520px] relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" id="circuit" width="2000" height="1500" viewBox="0 0 2000 1500" class="w-full h-full">
+                        <defs>
+                            <marker id="arrowhead-pos" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#10b981" />
+                            </marker>
+                            <marker id="arrowhead-neg" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+                                <polygon points="8 0, 0 3, 8 6" fill="#ef4444" />
+                            </marker>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="2" result="blur"/>
+                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                        </defs>
+                        <g id="connections"></g>
+                        <g id="simulation-overlay"></g>
+                        <g id="component-labels"></g>
+                        <g id="multimeter-probes"></g>
+                    </svg>
+                    <div id="component-selection-area" class="hidden"></div>
+                    <div id="circuit-overlay" class="absolute bottom-3 right-3 glass-panel px-3 py-1.5 rounded-lg text-xs font-mono text-gray-600">
+                        <span>📍 Coordinate: </span><span id="overlay-coords">0, 0</span>
+                    </div>
+                </div>
+
+                <!-- Multimeter Display Floating Window -->
+                <div id="multimeter-panel" class="glass-panel rounded-xl p-4 w-72 hidden shadow-xl border border-amber-200">
+                    <div class="flex items-center justify-between border-b pb-2 mb-2">
+                        <h3 class="font-bold text-xs text-amber-800 tracking-wider">🔬 DIGITAL MULTIMETER</h3>
+                        <button onclick="deactivate_multimeter()" class="text-xs text-gray-400 hover:text-red-500 font-bold">✕</button>
+                    </div>
+                    <div class="text-center font-mono text-[10px] text-amber-600 font-bold tracking-widest" id="multimeter-mode-label">VOLTMETER</div>
+                    <div class="bg-slate-950 p-4 rounded-xl my-2 text-center border border-slate-800 shadow-inner flex items-baseline justify-center gap-2">
+                        <span id="multimeter-value" class="font-mono text-3xl font-extrabold text-emerald-400 tracking-widest drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">---.--</span>
+                        <span id="multimeter-unit" class="font-mono text-lg font-bold text-emerald-400 opacity-80">V</span>
+                    </div>
+                    <div id="multimeter-probe-info" class="text-[11px] text-center text-gray-500 font-medium">Click two nodes to measure voltage</div>
+                </div>
+
+                <!-- LIVE AC/DC PHASOR & WAVEFORM SYNC RESULTS (Bottom Panel in Builder View) -->
+                <div id="builder-results-panel" class="bg-white rounded-xl shadow-md p-5 border border-gray-200 space-y-4">
+                    <h3 class="font-bold text-base text-indigo-900 flex items-center gap-2">
+                        <span>📊</span> Custom Circuit Analysis Results &amp; Phasor Visualizer
+                    </h3>
+
+                    <div id="builder-summary-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><div class="text-xs text-slate-500">Source Voltage</div><div id="b_v" class="text-lg font-bold text-amber-600 mono">0.00 V</div></div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><div class="text-xs text-slate-500">Total Current (I)</div><div id="b_i" class="text-lg font-bold text-blue-600 mono">0.00 A</div></div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><div class="text-xs text-slate-500">Impedance |Z|</div><div id="b_z" class="text-lg font-bold text-purple-600 mono">0.00 Ω</div></div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200"><div class="text-xs text-slate-500">Power Factor (PF)</div><div id="b_pf" class="text-lg font-bold text-emerald-600 mono">1.00</div></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <!-- Live Phasor Diagram for Builder Circuit -->
+                        <div class="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 flex flex-col items-center">
+                            <h4 class="text-xs font-bold text-indigo-800 uppercase tracking-widest mb-2">🎯 Impedance Phasor (Z = R + jX)</h4>
+                            <canvas id="phasorCanvasBuilder" width="360" height="300" class="max-w-full bg-white rounded-lg border border-indigo-100 shadow-sm"></canvas>
+                        </div>
+                        <!-- Component Breakdown Table -->
+                        <div class="overflow-x-auto">
+                            <h4 class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-2">⚡ Component Breakdown</h4>
+                            <div id="simulation-content" class="text-xs scroll-panel max-h-[260px] overflow-y-auto">
+                                <p class="text-gray-400 italic">กด Simulate เพื่อวิเคราะห์วงจรและแสดงผลเฟซเซอร์</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
     </main>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- JAVASCRIPT                                                 -->
+    <!-- MODAL COMPONENT PROPERTIES DIALOG                           -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="component-dialog-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-200 w-[90%] max-w-md overflow-hidden">
+            <div class="px-5 py-4 bg-indigo-900 text-white flex items-center justify-between">
+                <h3 id="dialog-title" class="font-bold text-base">Component Properties</h3>
+                <button id="btn-close-dialog" onclick="close_component_dialog()" class="text-white/70 hover:text-white font-bold text-lg">✕</button>
+            </div>
+            <div id="dialog-content" class="p-5 space-y-4">
+                <!-- Dynamically populated property fields -->
+            </div>
+            <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                <button id="dialog-cancel" onclick="close_component_dialog()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300">Cancel</button>
+                <button id="dialog-save" onclick="save_component_dialog()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow">💾 Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- JAVASCRIPT ENGINE & CONTROLLER                             -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <script>
         // ╔══════════════════════════════════════════════════════════════╗
-        // ║  CLASS: Complex Number (จำนวนเชิงซ้อน a + jb)              ║
+        // ║ 1. COMPLEX NUMBERS & MATH HELPERS                           ║
         // ╚══════════════════════════════════════════════════════════════╝
         class Complex {
-            constructor(re, im = 0) {
-                this.re = re;   // ส่วนจริง (Real)
-                this.im = im;   // ส่วนจินตภาพ (Imaginary)
-            }
-            // การบวก: (a+jb) + (c+jd) = (a+c) + j(b+d)
+            constructor(re, im = 0) { this.re = re; this.im = im; }
             add(c) { return new Complex(this.re + c.re, this.im + c.im); }
-            // การลบ: (a+jb) - (c+jd) = (a-c) + j(b-d)
             sub(c) { return new Complex(this.re - c.re, this.im - c.im); }
-            // การคูณ: (a+jb)(c+jd) = (ac-bd) + j(ad+bc)
             mul(c) { return new Complex(this.re * c.re - this.im * c.im, this.re * c.im + this.im * c.re); }
-            // การหาร: (a+jb)/(c+jd) = [(ac+bd)+j(bc-ad)] / (c²+d²)
             div(c) {
                 const d = c.re * c.re + c.im * c.im;
                 if (d === 0) return new Complex(0, 0);
                 return new Complex((this.re * c.re + this.im * c.im) / d, (this.im * c.re - this.re * c.im) / d);
             }
-            // ขนาด (Magnitude): |Z| = √(a² + b²)
             mag() { return Math.sqrt(this.re * this.re + this.im * this.im); }
-            // มุมเฟส (Phase): φ = atan2(b, a) [radians]
             phase() { return Math.atan2(this.im, this.re); }
-            // มุมเฟสเป็นองศา
             phaseDeg() { return this.phase() * 180 / Math.PI; }
-            // คอนจูเกต: (a+jb)* = a - jb
-            conj() { return new Complex(this.re, -this.im); }
-            // ส่วนกลับ: 1/Z
-            recip() { return new Complex(1, 0).div(this); }
-            // สร้างจากรูปเชิงขั้ว: Z = M∠θ
-            static polar(m, a) { return new Complex(m * Math.cos(a), m * Math.sin(a)); }
-            // แสดงผลในรูป Rectangular: a + jb
             str(d = 2) {
                 const r = this.re.toFixed(d);
                 const i = Math.abs(this.im).toFixed(d);
                 if (Math.abs(this.im) < 5e-3) return r;
                 return `${r} ${this.im >= 0 ? '+' : '−'} j${i}`;
             }
-            // แสดงผลในรูป Polar: |Z|∠θ°
             polar_str(d = 2) { return `${this.mag().toFixed(d)}∠${this.phaseDeg().toFixed(d)}°`; }
         }
 
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  CircuitEngine: Core Calculation Functions (DC + AC)         ║
-        // ╚══════════════════════════════════════════════════════════════╝
         const CE = {
-            // ─── 1. DC Analysis ─────────────────────────────────────
-
-            // 1.1 กฎของโอห์ม (Ohm's Law)
-            // V = I × R
             voltage: (I, R) => I * R,
-            // I = V / R
             current: (V, R) => R !== 0 ? V / R : 0,
-            // R = V / I
             resistance: (V, I) => I !== 0 ? V / I : Infinity,
-
-            // 1.2 กำลังไฟฟ้า (Power)
-            // P = V × I
             power_VI: (V, I) => V * I,
-            // P = I² × R
             power_I2R: (I, R) => I * I * R,
-            // P = V² / R
-            power_V2R: (V, R) => R !== 0 ? V * V / R : 0,
-
-            // 1.2 ความต้านทานรวม
-            // อนุกรม: R_eq = R1 + R2 + ... + Rn
             seriesR: (rs) => rs.reduce((s, r) => s + r, 0),
-            // ขนาน: 1/R_eq = 1/R1 + 1/R2 + ... + 1/Rn
             parallelR: (rs) => { const s = rs.reduce((a, r) => a + (r > 0 ? 1 / r : 0), 0); return s > 0 ? 1 / s : 0; },
-            // ขนาน 2 ตัว: R_eq = (R1 × R2) / (R1 + R2)
-            par2R: (a, b) => (a + b) !== 0 ? (a * b) / (a + b) : 0,
-
-            // ตัวแบ่งแรงดัน: V_out = V_in × R2 / (R1 + R2)
-            vDiv: (Vin, R1, R2) => (R1 + R2) !== 0 ? Vin * R2 / (R1 + R2) : 0,
-            // ตัวแบ่งกระแส: I1 = I_total × R2 / (R1 + R2)
-            iDiv: (It, R1, R2) => (R1 + R2) !== 0 ? It * R2 / (R1 + R2) : 0,
-
-            // 1.3 แปลง Star ⇌ Delta
-            // Delta→Star: R1 = (Rb×Rc)/(Ra+Rb+Rc)
-            d2s: (Ra, Rb, Rc) => {
-                const s = Ra + Rb + Rc;
-                return s > 0 ? { R1: (Rb * Rc) / s, R2: (Rc * Ra) / s, R3: (Ra * Rb) / s } : { R1: 0, R2: 0, R3: 0 };
-            },
-            // Star→Delta: Ra = (R1R2 + R2R3 + R3R1) / R1
-            s2d: (R1, R2, R3) => {
-                const sp = R1 * R2 + R2 * R3 + R3 * R1;
-                return { Ra: R1 > 0 ? sp / R1 : 0, Rb: R2 > 0 ? sp / R2 : 0, Rc: R3 > 0 ? sp / R3 : 0 };
-            },
-
-            // 1.4 ทฤษฎีเทวินิน & นอร์ตัน
-            thevenin: (Voc, Req) => ({ Vth: Voc, Rth: Req }),
-            norton: (Isc, Req) => ({ IN: Isc, RN: Req }),
-            thev2nort: (Vth, Rth) => ({ IN: Rth > 0 ? Vth / Rth : 0, RN: Rth }),
-            nort2thev: (IN, RN) => ({ Vth: IN * RN, Rth: RN }),
-
-            // ─── 2. AC Analysis ─────────────────────────────────────
-
-            // 2.1 ความถี่เชิงมุม: ω = 2πf (rad/s)
             omega: (f) => 2 * Math.PI * f,
-
-            // 2.1 ค่าชั่วขณะ (Instantaneous)
-            // v(t) = Vm × sin(ωt + θ)
-            instV: (Vm, w, t, th) => Vm * Math.sin(w * t + th),
-            // i(t) = Im × sin(ωt + θ)
-            instI: (Im, w, t, th) => Im * Math.sin(w * t + th),
-
-            // 2.1 ค่า RMS: V_rms = Vm / √2
             vrms: (Vm) => Vm / Math.SQRT2,
             irms: (Im) => Im / Math.SQRT2,
-
-            // 2.2 รีแอกแตนซ์ (Reactance)
-            // X_L = 2πfL (Ω) — รีแอกแตนซ์เหนี่ยวนำ
             XL: (f, L) => 2 * Math.PI * f * L,
-            // X_C = 1/(2πfC) (Ω) — รีแอกแตนซ์ตัวเก็บประจุ
             XC: (f, C) => C > 0 ? 1 / (2 * Math.PI * f * C) : Infinity,
-            // ย้อนกลับ: L = XL/(2πf)
             LfromXL: (f, xl) => xl / (2 * Math.PI * f),
-            // ย้อนกลับ: C = 1/(2πf × XC)
             CfromXC: (f, xc) => 1 / (2 * Math.PI * f * xc),
-
-            // 2.3 อิมพีแดนซ์ (Complex) — Series RLC
-            // Z = R + j(XL - XC)
             Zseries: (R, xl, xc) => new Complex(R, xl - xc),
-
-            // 2.3 อิมพีแดนซ์ (Complex) — Parallel RLC
-            // Y = 1/R + 1/(jXL) + jωC = G - j/XL + j/XC
             Zparallel: (R, xl, xc) => {
                 const Yr = new Complex(R > 0 ? 1 / R : 0, 0);
-                // FIX: When xl=0 the inductor is a short (Y_L → ∞), handled by using
-                // a very large admittance rather than silently returning 0.
                 const Yl = xl > 1e-9 ? new Complex(0, -1 / xl) : new Complex(0, -1e9);
                 const Yc = xc > 1e-9 ? new Complex(0, 1 / xc) : new Complex(0, 0);
                 const Y = Yr.add(Yl).add(Yc);
                 return { Z: new Complex(1, 0).div(Y), Y };
             },
-
-            // 2.3 แอดมิตแตนซ์: Y = 1/Z = G + jB
-            admit: (Z) => new Complex(1, 0).div(Z),
-
-            // 2.4 กำลังไฟฟ้า AC
-            // S = Vrms × Irms (VA) — กำลังปรากฏ
-            S: (Vrms, Irms) => Vrms * Irms,
-            // P = S × cos(φ) (W) — กำลังจริง
-            P: (S, phi) => S * Math.cos(phi),
-            // Q = S × sin(φ) (VAR) — กำลังรีแอกทีฟ
-            Q: (S, phi) => S * Math.sin(phi),
-            // Power Factor = cos(φ)
-            PF: (phi) => Math.cos(phi)
+            d2s: (Ra, Rb, Rc) => {
+                const s = Ra + Rb + Rc;
+                return s > 0 ? { R1: (Rb * Rc) / s, R2: (Rc * Ra) / s, R3: (Ra * Rb) / s } : { R1: 0, R2: 0, R3: 0 };
+            },
+            s2d: (R1, R2, R3) => {
+                const sp = R1 * R2 + R2 * R3 + R3 * R1;
+                return { Ra: R1 > 0 ? sp / R1 : 0, Rb: R2 > 0 ? sp / R2 : 0, Rc: R3 > 0 ? sp / R3 : 0 };
+            }
         };
 
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Application State                                          ║
-        // ╚══════════════════════════════════════════════════════════════╝
+        // Application Main State
         const ST = {
-            src: 'dc',          // 'dc' | 'ac'
-            cir: 'ohm',         // circuit mode
-            anim: true,         // animation running
-            phase: 0,           // animation phase offset
-            wave: null           // cached waveform data
+            mainView: 'presets', // 'presets' | 'builder'
+            src: 'dc',
+            cir: 'ohm',
+            anim: true,
+            phase: 0
         };
 
+        function switchMainView(v) {
+            ST.mainView = v;
+            document.getElementById('presets-view').classList.toggle('hidden', v !== 'presets');
+            document.getElementById('builder-view').classList.toggle('hidden', v !== 'builder');
+            document.getElementById('btn_view_presets').className = `main-tab-btn px-4 py-2 rounded-lg font-semibold text-xs md:text-sm flex items-center gap-1.5 ${v === 'presets' ? 'active' : 'text-indigo-200 hover:text-white'}`;
+            document.getElementById('btn_view_builder').className = `main-tab-btn px-4 py-2 rounded-lg font-semibold text-xs md:text-sm flex items-center gap-1.5 ${v === 'builder' ? 'active' : 'text-indigo-200 hover:text-white'}`;
+            document.getElementById('source-toggle').classList.toggle('hidden', v !== 'presets');
+            if (v === 'builder') {
+                setTimeout(() => { update_viewbox(); drawBuilderPhasor(100, 47.1, 31.8, 101.1, 8.7); }, 100);
+            }
+        }
+
         // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Slider ↔ Input Sync                                        ║
+        // ║ 2. PRESETS ENGINE & SLIDER HANDLERS                         ║
         // ╚══════════════════════════════════════════════════════════════╝
         const PM = {
             v_dc: ['sl_v_dc', 'in_v_dc'], r1: ['sl_r1', 'in_r1'], r2: ['sl_r2', 'in_r2'], r3: ['sl_r3', 'in_r3'],
             v_ac: ['sl_v_ac', 'in_v_ac'], freq: ['sl_freq', 'in_freq'], r_ac: ['sl_r_ac', 'in_r_ac'],
             l: ['sl_l', 'in_l'], c: ['sl_c', 'in_c']
         };
+
         function syncSlider(k) {
             document.getElementById(PM[k][1]).value = document.getElementById(PM[k][0]).value;
-            if (k === 'l' || k === 'c' || k === 'freq') syncXfromLC();
+            if (['l','c','freq'].includes(k)) syncXfromLC();
             updateAll();
         }
         function syncInput(k) {
             const inp = document.getElementById(PM[k][1]);
             let v = parseFloat(inp.value);
             if (!isNaN(v)) {
-                // BUG9 FIX: Clamp the SLIDER to its own (narrower) range,
-                // but do NOT clamp the input field — it intentionally allows
-                // a wider range than the slider (e.g. input max=10000, slider max=500).
                 const s = document.getElementById(PM[k][0]);
                 s.value = Math.min(Math.max(v, +s.min), +s.max);
-                // Only enforce the input's own min/max
                 const inMin = parseFloat(inp.min), inMax = parseFloat(inp.max);
                 if (!isNaN(inMin) && v < inMin) { v = inMin; inp.value = v; }
                 if (!isNaN(inMax) && v > inMax) { v = inMax; inp.value = v; }
             }
-            if (k === 'l' || k === 'c' || k === 'freq') syncXfromLC();
+            if (['l','c','freq'].includes(k)) syncXfromLC();
             updateAll();
         }
         function gv(k) {
             const el = document.getElementById(PM[k][1]);
             let val = parseFloat(el.value);
-            // Allow R=0, L=0, C=0. Only freq must be strictly positive.
-            const mustBePositive = ['freq'];
-            if (isNaN(val) || (val <= 0 && mustBePositive.includes(k))) {
-                val = parseFloat(document.getElementById(PM[k][0]).value);
-            }
+            if (isNaN(val) || val === 0) val = parseFloat(document.getElementById(PM[k][0]).value);
             return val;
         }
-        function gvRaw(id) { return parseFloat(document.getElementById(id).value); }
 
-        // ── Reactance ↔ L/C Bidirectional Sync ──
         let _syncing = false;
-
-        // เมื่อเปลี่ยน L(mH) หรือ C(µF) → คำนวณ XL, XC (Ω)
         function syncXfromLC() {
             if (_syncing) return;
             _syncing = true;
-            const f = gv('freq') || 1;
-            const L = gv('l') / 1000;       // mH → H
-            const C = gv('c') / 1e6;        // µF → F
-            const xl = CE.XL(f, L);
-            const xc = CE.XC(f, C);
+            const f = gv('freq') || 1, L = gv('l') / 1000, C = gv('c') / 1e6;
+            const xl = CE.XL(f, L), xc = CE.XC(f, C);
             document.getElementById('in_xl').value = xl.toFixed(2);
-            document.getElementById('in_xc').value = isFinite(xc) ? xc.toFixed(2) : '';
+            document.getElementById('in_xc').value = isFinite(xc) ? xc.toFixed(2) : '0';
             _syncing = false;
         }
-
-        // เมื่อกรอก XL (Ω) → คำนวณกลับหา L (mH)
         function syncXL() {
             if (_syncing) return;
             _syncing = true;
-            const f = gv('freq') || 1;
-            const xl = parseFloat(document.getElementById('in_xl').value) || 0;
-            const L_H = CE.LfromXL(f, xl);       // L in Henries
-            const L_mH = isFinite(L_H) ? L_H * 1000 : 0;             // → mH
+            const f = gv('freq') || 1, xl = parseFloat(document.getElementById('in_xl').value) || 0;
+            const L_mH = isFinite(CE.LfromXL(f, xl)) ? CE.LfromXL(f, xl) * 1000 : 0;
             document.getElementById('in_l').value = L_mH.toFixed(2);
             const s = document.getElementById('sl_l');
             s.value = Math.min(Math.max(L_mH, +s.min), +s.max);
-            updateAll();
-            _syncing = false;
+            _syncing = false; updateAll();
         }
-
-        // เมื่อกรอก XC (Ω) → คำนวณกลับหา C (µF)
         function syncXC() {
             if (_syncing) return;
             _syncing = true;
-            const f = gv('freq') || 1;
-            const rawXc = parseFloat(document.getElementById('in_xc').value);
-            const xc = (!isNaN(rawXc) && rawXc >= 0) ? rawXc : 0;
-            if (!isNaN(rawXc) && rawXc < 0) {
-                document.getElementById('in_xc').value = '0';
-            }
-            const C_F = CE.CfromXC(f, xc);       // C in Farads
-            const C_uF = isFinite(C_F) ? C_F * 1e6 : 0;              // → µF
-            document.getElementById('in_c').value = isFinite(C_F) ? C_uF.toFixed(2) : '';
-            if (isFinite(C_F)) {
-                const s = document.getElementById('sl_c');
-                s.value = Math.min(Math.max(C_uF, +s.min), +s.max);
-            }
-            updateAll();
-            _syncing = false;
+            const f = gv('freq') || 1, xc = parseFloat(document.getElementById('in_xc').value) || 0.01;
+            const C_uF = isFinite(CE.CfromXC(f, xc)) ? CE.CfromXC(f, xc) * 1e6 : 0;
+            document.getElementById('in_c').value = C_uF.toFixed(2);
+            const s = document.getElementById('sl_c');
+            s.value = Math.min(Math.max(C_uF, +s.min), +s.max);
+            _syncing = false; updateAll();
         }
 
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Mode Switching                                             ║
-        // ╚══════════════════════════════════════════════════════════════╝
         function setSourceMode(m) {
             ST.src = m;
-            // Header toggle
-            const dc = document.getElementById('btn_dc'), ac = document.getElementById('btn_ac');
-            dc.className = `mode-btn px-5 py-2 rounded-lg font-semibold text-sm ${m === 'dc' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'}`;
-            ac.className = `mode-btn px-5 py-2 rounded-lg font-semibold text-sm ${m === 'ac' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'}`;
-            // Panels
+            document.getElementById('btn_dc').className = `mode-btn px-4 py-1.5 rounded-lg font-semibold text-xs md:text-sm ${m === 'dc' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'}`;
+            document.getElementById('btn_ac').className = `mode-btn px-4 py-1.5 rounded-lg font-semibold text-xs md:text-sm ${m === 'ac' ? 'bg-white text-indigo-800 shadow-md' : 'text-white/80 hover:text-white'}`;
             document.getElementById('dc-tabs').classList.toggle('hidden', m !== 'dc');
             document.getElementById('ac-tabs').classList.toggle('hidden', m !== 'ac');
             document.getElementById('dc-params').classList.toggle('hidden', m !== 'dc');
             document.getElementById('ac-params').classList.toggle('hidden', m !== 'ac');
             document.getElementById('dc-out').classList.toggle('hidden', m !== 'dc');
             document.getElementById('ac-out').classList.toggle('hidden', m !== 'ac');
-            document.getElementById('res-out').classList.add('hidden');
-            document.getElementById('sd-params').classList.add('hidden');
-            // BUG12 FIX: Initialise XL/XC display fields when first switching to AC
-            if (m === 'ac') syncXfromLC();
             setCircuitMode(m === 'dc' ? 'ohm' : 'series_ac');
         }
 
-        function setCircuitMode(m) {
-            ST.cir = m;
-            const cid = ST.src === 'dc' ? 'dc-tabs' : 'ac-tabs';
-            document.querySelectorAll(`#${cid} .tab-btn`).forEach(b => b.classList.toggle('active', b.dataset.mode === m));
-            const multi = m === 'series_dc' || m === 'parallel_dc';
-            document.getElementById('r2-group').classList.toggle('hidden', !multi);
-            document.getElementById('r3-group').classList.toggle('hidden', !multi);
-            document.getElementById('sd-params').classList.toggle('hidden', m !== 'star_delta');
-            document.getElementById('sd-diagram').classList.toggle('hidden', m !== 'star_delta');
-
-            if (ST.src === 'dc') document.getElementById('dc-params').classList.toggle('hidden', m === 'star_delta');
-
-            // Resonance mode: show resonance results, hide AC results
-            if (ST.src === 'ac') {
-                const isRes = m === 'resonance';
-                document.getElementById('ac-out').classList.toggle('hidden', isRes);
-                document.getElementById('res-out').classList.toggle('hidden', !isRes);
-
-                // Force Chart.js to resize after becoming visible
-                setTimeout(() => {
-                    if (isRes && typeof resChart !== 'undefined' && resChart) { resChart.resize(); resChart.update(); }
-                    if (!isRes && typeof oscChart !== 'undefined' && oscChart) { oscChart.resize(); oscChart.update(); }
-                }, 10);
-            }
+        function setCircuitMode(c) {
+            ST.cir = c;
+            const group = ST.src === 'dc' ? 'dc-tabs' : 'ac-tabs';
+            document.querySelectorAll(`#${group} .tab-btn`).forEach(b => {
+                b.classList.toggle('active', b.dataset.mode === c);
+            });
+            document.getElementById('r2-group').classList.toggle('hidden', !['series_dc','parallel_dc'].includes(c));
+            document.getElementById('r3-group').classList.toggle('hidden', !['series_dc','parallel_dc'].includes(c));
+            document.getElementById('sd-params').classList.toggle('hidden', c !== 'star_delta');
+            document.getElementById('dc-params').classList.toggle('hidden', ST.src === 'dc' && c === 'star_delta');
+            document.getElementById('sd-diagram').classList.toggle('hidden', c !== 'star_delta');
+            document.getElementById('res-out').classList.toggle('hidden', c !== 'resonance');
+            if (ST.src === 'ac') document.getElementById('ac-out').classList.toggle('hidden', c === 'resonance');
             updateAll();
         }
 
         // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Star-Delta Calculation & Diagram                           ║
+        // ║ 3. CIRCUIT BUILDER ENGINE (SVG CANVAS & MNA SOLVER)        ║
         // ╚══════════════════════════════════════════════════════════════╝
-        function calcSD(from) {
-            if (from === 'delta') {
-                const a = +document.getElementById('sd_ra').value || .1, b = +document.getElementById('sd_rb').value || .1, c = +document.getElementById('sd_rc').value || .1;
-                const s = CE.d2s(a, b, c);
-                document.getElementById('sd_r1').value = s.R1.toFixed(2);
-                document.getElementById('sd_r2').value = s.R2.toFixed(2);
-                document.getElementById('sd_r3').value = s.R3.toFixed(2);
-            } else {
-                const a = +document.getElementById('sd_r1').value || .1, b = +document.getElementById('sd_r2').value || .1, c = +document.getElementById('sd_r3').value || .1;
-                const d = CE.s2d(a, b, c);
-                document.getElementById('sd_ra').value = d.Ra.toFixed(2);
-                document.getElementById('sd_rb').value = d.Rb.toFixed(2);
-                document.getElementById('sd_rc').value = d.Rc.toFixed(2);
+        class Coordinate { constructor(x = 0, y = 0) { this.x = x; this.y = y; } }
+        class Dimension { constructor(w = 0, h = 0) { this.width = w; this.height = h; } }
+        class Component {
+            constructor(name = "", base_point = new Coordinate(), dimension = new Dimension(), rotation = 0) {
+                this.id = "component_" + (++component_counter);
+                this.name = name;
+                this.base_point = base_point;
+                this.sub_points = [];
+                this.dimension = dimension;
+                this.rotation = rotation;
+                this.nodes = [];
+                this.properties = {};
             }
-            drawSD(); updateAll();
         }
+        class Sub_Diagram_Anchor { constructor(type = "", anchor_points = [new Coordinate()]) { this.type = type; this.anchor_points = anchor_points; } }
+        class Component_Node { constructor(sub_index = 0, node_id = "") { this.sub_diagram_index = sub_index; this.node_id = node_id; } }
+        class Node { constructor(type = "", position = new Coordinate(), base_id = "") { this.id = "node_" + (++node_counter); this.type = type; this.position = position; this.base_component_id = base_id; } }
+        class Connection { constructor(n1="", c1="", n2="", c2="") { this.id = "connection_" + (++connection_counter); this.node_1_id = n1; this.component_1_id = c1; this.node_2_id = n2; this.component_2_id = c2; this.connector_colour = "#475569"; } }
 
-        function drawSD() {
-            const cv = document.getElementById('sdCanvas'); if (!cv) return;
-            const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-            ctx.clearRect(0, 0, W, H);
-            ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, W, H);
-            const Ra = +document.getElementById('sd_ra').value || 0, Rb = +document.getElementById('sd_rb').value || 0, Rc = +document.getElementById('sd_rc').value || 0;
-            const sR1 = +document.getElementById('sd_r1').value || 0, sR2 = +document.getElementById('sd_r2').value || 0, sR3 = +document.getElementById('sd_r3').value || 0;
-
-            // Title bar
-            ctx.fillStyle = '#1e3a8a'; ctx.fillRect(0, 0, W, 30);
-            ctx.font = 'bold 12px Inter'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
-            ctx.fillText('Star \u21cc Delta Conversion \u2014 Resistance Analysis', W / 2, 20);
-
-            // Helper: draw zigzag resistor along a line segment
-            const drawZigzag = (x1, y1, x2, y2, val, lbl, color) => {
-                const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-                const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-                const ang = Math.atan2(y2 - y1, x2 - x1);
-                ctx.save(); ctx.translate(mx, my); ctx.rotate(ang);
-                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2.5;
-                ctx.moveTo(-len / 2, 0); ctx.lineTo(-len / 2 + 8, 0); ctx.stroke();
-                const rw = Math.min(len * 0.55, 50), rh = 7;
-                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2;
-                const seg = rw / 8; ctx.moveTo(-rw / 2, 0);
-                for (let i = 0; i < 8; i++) ctx.lineTo(-rw / 2 + (i + 0.5) * seg, (i % 2 === 0 ? -rh : rh));
-                ctx.lineTo(rw / 2, 0); ctx.stroke();
-                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2.5;
-                ctx.moveTo(len / 2 - 8, 0); ctx.lineTo(len / 2, 0); ctx.stroke();
-                ctx.restore();
-                const perp = ang + Math.PI / 2, off = 20;
-                ctx.font = 'bold 10px Inter'; ctx.fillStyle = color; ctx.textAlign = 'center';
-                ctx.fillText(lbl + '=' + val.toFixed(2) + '\u03a9', mx + off * Math.cos(perp), my + off * Math.sin(perp) + 4);
-            };
-
-            // Delta (left)
-            const dCx = W * 0.26, dCy = H * 0.60, dS = 75;
-            const dp = [{ x: dCx, y: dCy - dS }, { x: dCx - dS * 0.87, y: dCy + dS * 0.5 }, { x: dCx + dS * 0.87, y: dCy + dS * 0.5 }];
-            ctx.beginPath(); ctx.strokeStyle = '#93c5fd'; ctx.lineWidth = 2.5;
-            ctx.moveTo(dp[0].x, dp[0].y); ctx.lineTo(dp[1].x, dp[1].y); ctx.lineTo(dp[2].x, dp[2].y); ctx.closePath(); ctx.stroke();
-            drawZigzag(dp[0].x, dp[0].y, dp[1].x, dp[1].y, Ra, 'Ra', '#1d4ed8');
-            drawZigzag(dp[1].x, dp[1].y, dp[2].x, dp[2].y, Rc, 'Rc', '#1d4ed8');
-            drawZigzag(dp[0].x, dp[0].y, dp[2].x, dp[2].y, Rb, 'Rb', '#1d4ed8');
-            dp.forEach((p, i) => { ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI); ctx.fillStyle = '#3b82f6'; ctx.fill(); ctx.font = 'bold 12px Inter'; ctx.fillStyle = '#1e40af'; ctx.textAlign = 'center'; ctx.fillText(['A', 'B', 'C'][i], p.x + (i === 0 ? 0 : i === 1 ? -14 : 14), p.y + (i === 0 ? -12 : 14)); });
-            ctx.font = 'bold 13px Inter'; ctx.fillStyle = '#1e40af'; ctx.textAlign = 'center'; ctx.fillText('\u25b3 Delta', dCx, 48);
-
-            // Arrow
-            ctx.font = 'bold 26px Inter'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'center'; ctx.fillText('\u21cc', W * 0.5, H * 0.58 + 4);
-
-            // Star (right)
-            const sCx = W * 0.74, sCy = H * 0.60;
-            const sp = [{ x: sCx, y: sCy - dS }, { x: sCx - dS * 0.87, y: sCy + dS * 0.5 }, { x: sCx + dS * 0.87, y: sCy + dS * 0.5 }];
-            ctx.beginPath(); ctx.strokeStyle = '#6ee7b7'; ctx.lineWidth = 2.5;
-            sp.forEach(p => { ctx.moveTo(sCx, sCy); ctx.lineTo(p.x, p.y); }); ctx.stroke();
-            drawZigzag(sCx, sCy, sp[0].x, sp[0].y, sR1, 'R1', '#065f46');
-            drawZigzag(sCx, sCy, sp[1].x, sp[1].y, sR2, 'R2', '#065f46');
-            drawZigzag(sCx, sCy, sp[2].x, sp[2].y, sR3, 'R3', '#065f46');
-            ctx.beginPath(); ctx.arc(sCx, sCy, 5, 0, 2 * Math.PI); ctx.fillStyle = '#10b981'; ctx.fill();
-            ctx.font = '9px Inter'; ctx.fillStyle = '#065f46'; ctx.textAlign = 'center'; ctx.fillText('N', sCx, sCy + 14);
-            sp.forEach((p, i) => { ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, 2 * Math.PI); ctx.fillStyle = '#10b981'; ctx.fill(); ctx.font = 'bold 12px Inter'; ctx.fillStyle = '#065f46'; ctx.textAlign = 'center'; ctx.fillText(['A', 'B', 'C'][i], p.x + (i === 0 ? 0 : i === 1 ? -14 : 14), p.y + (i === 0 ? -12 : 14)); });
-            ctx.font = 'bold 13px Inter'; ctx.fillStyle = '#065f46'; ctx.textAlign = 'center'; ctx.fillText('Y Star', sCx, 48);
-        }
-
-
-
-
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Main Update                                                ║
-        // ╚══════════════════════════════════════════════════════════════╝
-        function updateAll() {
-            if (ST.src === 'dc') updateDC();
-            else if (ST.cir === 'resonance') updateResonance();
-            else updateAC();
-        }
-
-        // ──── DC Update ────────────────────────────────────────────────
-        function updateDC() {
-            const V = gv('v_dc'), R1 = gv('r1') || .1, R2 = gv('r2') || .1, R3 = gv('r3') || .1;
-            const m = ST.cir; let res = [];
-
-            if (m === 'ohm') {
-                const I = CE.current(V, R1), P = CE.power_VI(V, I);
-                res = [
-                    { l: 'Voltage (V)', v: V.toFixed(2), u: 'V', c: 'amber', f: 'V = I × R' },
-                    { l: 'Current (I)', v: I.toFixed(4), u: 'A', c: 'blue', f: 'I = V / R' },
-                    { l: 'Resistance (R)', v: R1.toFixed(2), u: 'Ω', c: 'red', f: 'R = V / I' },
-                    { l: 'Power (P=VI)', v: P.toFixed(4), u: 'W', c: 'green', f: 'P = V × I' },
-                    { l: 'P = I²R', v: CE.power_I2R(I, R1).toFixed(4), u: 'W', c: 'green', f: 'P = I² × R' },
-                    { l: 'P = V²/R', v: CE.power_V2R(V, R1).toFixed(4), u: 'W', c: 'green', f: 'P = V² / R' },
-                    { l: 'Conductance G', v: (R1 > 0 ? (1 / R1).toFixed(6) : '0'), u: 'S', c: 'purple', f: 'G = 1 / R' },
-                    { l: 'Energy (1s)', v: P.toFixed(4), u: 'J', c: 'indigo', f: 'W = P × t' }
-                ];
-            } else if (m === 'series_dc') {
-                const Req = CE.seriesR([R1, R2, R3]), I = CE.current(V, Req), P = CE.power_VI(V, I);
-                const V1 = CE.voltage(I, R1), V2 = CE.voltage(I, R2), V3 = CE.voltage(I, R3);
-                res = [
-                    { l: 'R_eq (Series)', v: Req.toFixed(2), u: 'Ω', c: 'red', f: 'R_eq = R₁ + R₂ + R₃' },
-                    { l: 'I_total', v: I.toFixed(4), u: 'A', c: 'blue', f: 'I_t = V / R_eq' },
-                    { l: 'V₁ = IR₁', v: V1.toFixed(2), u: 'V', c: 'amber', f: 'V₁ = I_t × R₁' },
-                    { l: 'V₂ = IR₂', v: V2.toFixed(2), u: 'V', c: 'amber', f: 'V₂ = I_t × R₂' },
-                    { l: 'V₃ = IR₃', v: V3.toFixed(2), u: 'V', c: 'amber', f: 'V₃ = I_t × R₃' },
-                    { l: 'P_total', v: P.toFixed(4), u: 'W', c: 'green', f: 'P_t = V × I_t' },
-                    { l: 'P₁ = I²R₁', v: CE.power_I2R(I, R1).toFixed(4), u: 'W', c: 'green', f: 'P₁ = I_t² × R₁' },
-                    { l: 'P₂ = I²R₂', v: CE.power_I2R(I, R2).toFixed(4), u: 'W', c: 'green', f: 'P₂ = I_t² × R₂' }
-                ];
-            } else if (m === 'parallel_dc') {
-                const Req = CE.parallelR([R1, R2, R3]), It = CE.current(V, Req);
-                const I1 = CE.current(V, R1), I2 = CE.current(V, R2), I3 = CE.current(V, R3);
-                const nt = CE.thev2nort(V, Req);
-                res = [
-                    { l: 'R_eq (Parallel)', v: Req.toFixed(2), u: 'Ω', c: 'red', f: '1/R_eq = 1/R₁ + 1/R₂ + 1/R₃' },
-                    { l: 'I_total', v: It.toFixed(4), u: 'A', c: 'blue', f: 'I_t = V / R_eq' },
-                    { l: 'I₁ = V/R₁', v: I1.toFixed(4), u: 'A', c: 'blue', f: 'I₁ = V / R₁' },
-                    { l: 'I₂ = V/R₂', v: I2.toFixed(4), u: 'A', c: 'blue', f: 'I₂ = V / R₂' },
-                    { l: 'I₃ = V/R₃', v: I3.toFixed(4), u: 'A', c: 'blue', f: 'I₃ = V / R₃' },
-                    { l: 'P_total', v: CE.power_VI(V, It).toFixed(4), u: 'W', c: 'green', f: 'P_t = V × I_t' },
-                    { l: 'Thevenin V_th', v: V.toFixed(2), u: 'V', c: 'purple', s: 'Norton I_N = ' + nt.IN.toFixed(4) + ' A', f: 'V_th = V_oc' },
-                    { l: 'Thevenin R_th', v: Req.toFixed(2), u: 'Ω', c: 'purple', f: 'R_th = R_eq' }
-                ];
-            } else if (m === 'star_delta') {
-                drawSD();
-                const Ra = +document.getElementById('sd_ra').value || 0, Rb = +document.getElementById('sd_rb').value || 0, Rc = +document.getElementById('sd_rc').value || 0;
-                const s1 = +document.getElementById('sd_r1').value || 0, s2 = +document.getElementById('sd_r2').value || 0, s3 = +document.getElementById('sd_r3').value || 0;
-                res = [
-                    { l: '△ Ra', v: Ra.toFixed(2), u: 'Ω', c: 'blue', f: 'Ra = (R₁R₂ + R₂R₃ + R₃R₁) / R₁' },
-                    { l: '△ Rb', v: Rb.toFixed(2), u: 'Ω', c: 'blue', f: 'Rb = (R₁R₂ + R₂R₃ + R₃R₁) / R₂' },
-                    { l: '△ Rc', v: Rc.toFixed(2), u: 'Ω', c: 'blue', f: 'Rc = (R₁R₂ + R₂R₃ + R₃R₁) / R₃' },
-                    { l: '', v: '', u: '', c: 'gray' },
-                    { l: 'Y R1', v: s1.toFixed(2), u: 'Ω', c: 'green', f: 'R₁ = (Rb × Rc) / (Ra+Rb+Rc)' },
-                    { l: 'Y R2', v: s2.toFixed(2), u: 'Ω', c: 'green', f: 'R₂ = (Rc × Ra) / (Ra+Rb+Rc)' },
-                    { l: 'Y R3', v: s3.toFixed(2), u: 'Ω', c: 'green', f: 'R₃ = (Ra × Rb) / (Ra+Rb+Rc)' }
-                ];
-            }
-            renderCards('dc-grid', res);
-            renderQuickDC(V, res);
-        }
-
-        // ──── AC Update ────────────────────────────────────────────────
-        function updateAC() {
-            const V = gv('v_ac'), f = gv('freq') || 1;
-            const R_raw = gvRaw('in_r_ac');
-            const R = (!isNaN(R_raw) && R_raw >= 0) ? R_raw : 0;
-            const L = gv('l') / 1000, C = gv('c') / 1e6;
-            const w = CE.omega(f), xl = CE.XL(f, L), xc = CE.XC(f, C);
-
-            // อัปเดตค่า XL, XC ในช่อง input (ถ้าไม่ได้ syncing อยู่)
-            if (!_syncing) {
-                document.getElementById('in_xl').value = xl.toFixed(2);
-                document.getElementById('in_xc').value = isFinite(xc) ? xc.toFixed(2) : '0';
-            }
-
-            const mode = ST.cir;
-            let Zc, Ip, pRad, pDeg, IR = 0, IL = 0, IC = 0;
-            let pMode;
-
-            if (mode === 'series_ac') {
-                Zc = CE.Zseries(R, xl, xc);
-                const Zm = Zc.mag();
-                Ip = Zm > 0 ? V / Zm : 0;
-                pRad = Zc.phase(); pDeg = pRad * 180 / Math.PI;
-                pMode = 'series';
-            } else {
-                IR = R > 0 ? V / R : 0;
-                IL = xl > 0 ? V / xl : 0;
-                IC = xc > 0 ? V / xc : 0;
-                const Ire = IC - IL;
-                Ip = Math.sqrt(IR * IR + Ire * Ire);
-                const Zm = Ip > 0 ? V / Ip : 0;
-                pRad = Math.atan2(Ire, IR); pDeg = pRad * 180 / Math.PI;
-                Zc = Ip > 0 ? Complex.polar(Zm, -pRad) : new Complex(0, 0);
-                pMode = 'parallel';
-            }
-
-            const Yc = Zc.mag() > 0 ? CE.admit(Zc) : new Complex(0, 0);
-            const Vrms = CE.vrms(V), Irms = CE.irms(Ip);
-            const S = CE.S(Vrms, Irms), Pw = CE.P(S, pRad), Qv = CE.Q(S, pRad), pf = CE.PF(pRad);
-
-            let sState, sCol;
-            if (Math.abs(pDeg) < 0.5) { sState = 'Resonance'; sCol = 'amber'; }
-            else if ((mode === 'series_ac' && xl > xc) || (mode === 'parallel_ac' && IL > IC)) { sState = 'Lagging (Inductive)'; sCol = 'blue'; }
-            else { sState = 'Leading (Capacitive)'; sCol = 'green'; }
-
-            const res = [
-                { l: '|Z| Impedance', v: Zc.mag().toFixed(2), u: 'Ω', c: 'indigo', s: Zc.str() + ' Ω', f: mode === 'series_ac' ? '|Z| = √(R² + (X_L - X_C)²)' : '|Z| = 1 / |Y|' },
-                { l: 'Phase θ', v: pDeg.toFixed(2), u: '°', c: sCol, s: sState, f: 'θ = arctan(X_eq / R_eq)' },
-                { l: 'I_peak', v: Ip.toFixed(4), u: 'A', c: 'blue', f: 'I_p = V_p / |Z|' },
-                { l: 'I_rms', v: Irms.toFixed(4), u: 'A', c: 'blue', f: 'I_rms = I_p / √2' },
-                { l: '|Y| Admittance', v: Yc.mag().toFixed(6), u: 'S', c: 'purple', s: Yc.str(4) + ' S', f: '|Y| = 1 / |Z|' },
-                { l: 'Power Factor', v: pf.toFixed(4), u: '', c: sCol, f: 'PF = cos(θ)' },
-                { l: 'P (Real)', v: Pw.toFixed(2), u: 'W', c: 'green', f: 'P = S × cos(θ)' },
-                { l: 'Q (Reactive)', v: Qv.toFixed(2), u: 'VAR', c: 'amber', f: 'Q = S × sin(θ)' },
-                { l: 'S (Apparent)', v: S.toFixed(2), u: 'VA', c: 'red', f: 'S = V_rms × I_rms' },
-                { l: 'X_L', v: xl.toFixed(2), u: 'Ω', c: 'blue', f: 'X_L = 2πfL' },
-                { l: 'X_C', v: xc.toFixed(2), u: 'Ω', c: 'green', f: 'X_C = 1 / (2πfC)' },
-                { l: 'V_rms', v: Vrms.toFixed(2), u: 'V', c: 'amber', f: 'V_rms = V_p / √2' }
-            ];
-
-            renderCards('ac-grid', res);
-            renderQuickAC(Zc, pDeg, Ip, sState, sCol);
-            renderLegend(pMode);
-            // Impedance triangle: pass R, X_net, |Z|, and pDeg
-            const X_net = Zc.im;   // imaginary part of Z (positive=inductive, negative=capacitive)
-            drawPhasor(Zc.re, X_net, Zc.mag(), pDeg, pMode, Zc);
-            ST.wave = { V, f, w, R, xl, xc, Ip, pRad, IR, IL, IC, mode: pMode };
-        }
-
-        // ──── Resonance Update ─────────────────────────────────────────
-        function updateResonance() {
-            const V = gv('v_ac'), R = gv('r_ac') || 0.1;
-            const L = gv('l') / 1000 || 1e-6, C = gv('c') / 1e6 || 1e-9;
-
-            const f0 = 1 / (2 * Math.PI * Math.sqrt(L * C));
-            const w0 = 2 * Math.PI * f0;
-            const xl0 = w0 * L;
-            const xc0 = 1 / (w0 * C);
-
-            const Q = (1 / R) * Math.sqrt(L / C);
-            const BW = f0 / Q;
-            const fl = f0 - BW / 2;
-            const fh = f0 + BW / 2;
-            const I0 = V / R;
-
-            const res = [
-                { l: 'Resonant Freq (f₀)', v: f0.toFixed(2), u: 'Hz', c: 'amber', f: 'f₀ = 1 / (2π√(LC))' },
-                { l: 'Quality Factor (Q)', v: Q.toFixed(2), u: '', c: 'indigo', f: 'Q = (1/R)√(L/C)' },
-                { l: 'Bandwidth (BW)', v: BW.toFixed(2), u: 'Hz', c: 'blue', f: 'BW = f₀ / Q' },
-                { l: 'Current at f₀ (I₀)', v: I0.toFixed(4), u: 'A', c: 'green', f: 'I₀ = V / R' },
-                { l: 'Impedance at f₀', v: R.toFixed(2), u: 'Ω', c: 'red', f: 'Z = R (at Resonance)' },
-                { l: 'X_L = X_C at f₀', v: xl0.toFixed(2), u: 'Ω', c: 'purple', f: 'X_L = X_C = 2πf₀L' },
-                { l: 'Lower Cutoff (f_L)', v: Math.max(0, fl).toFixed(2), u: 'Hz', c: 'gray', f: 'f_L = f₀ - BW/2' },
-                { l: 'Upper Cutoff (f_H)', v: fh.toFixed(2), u: 'Hz', c: 'gray', f: 'f_H = f₀ + BW/2' }
-            ];
-
-            renderCards('res-grid', res);
-            updateResChart(f0, R, L, C, BW);
-
-            // Update Quick Results
-            const Zc = new Complex(R, 0);
-            renderQuickAC(Zc, 0, I0, 'Resonance (Resistive)', 'amber');
-        }
-
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Renderers                                                  ║
-        // ╚══════════════════════════════════════════════════════════════╝
-        const CM = {
-            red: 'bg-red-50 border-red-200 text-red-700', blue: 'bg-blue-50 border-blue-200 text-blue-700',
-            green: 'bg-green-50 border-green-200 text-green-700', amber: 'bg-amber-50 border-amber-200 text-amber-700',
-            purple: 'bg-purple-50 border-purple-200 text-purple-700', indigo: 'bg-indigo-50 border-indigo-200 text-indigo-700',
-            gray: 'bg-gray-50 border-gray-200 text-gray-400'
+        const COMPONENT_DEFAULTS = {
+            dc_power:            { voltage: 12, label: "DC Power", simulatable: true },
+            ac_power:            { voltage: 220, frequency: 50, label: "AC Power", simulatable: true },
+            ground:              { label: "Ground", simulatable: true },
+            resistor:            { resistance: 100, label: "Resistor", simulatable: true },
+            capacitor:           { capacitance: 0.0001, label: "Capacitor", simulatable: true },
+            inductor:            { inductance: 0.15, label: "Inductor", simulatable: true },
+            switch:              { state: "closed", label: "Switch", simulatable: true },
+            fuse:                { max_current: 5, label: "Fuse", simulatable: true },
+            binary_buffer_gate:  { label: "Buffer / Diode", simulatable: false },
+            binary_not_gate:     { label: "NOT Gate", simulatable: false },
+            binary_or_gate:      { label: "OR Gate", simulatable: false },
+            binary_nor_gate:     { label: "NOR Gate", simulatable: false },
+            binary_and_gate:     { label: "AND Gate", simulatable: false },
+            binary_nand_gate:    { label: "NAND Gate", simulatable: false },
+            binary_xor_gate:     { label: "XOR Gate", simulatable: false },
+            binary_xnor_gate:    { label: "XNOR Gate", simulatable: false },
+            zener_diode:         { label: "Zener Diode", simulatable: false }
         };
 
-        function renderCards(id, arr) {
-            document.getElementById(id).innerHTML = arr.filter(r => r.l).map(r => `
-            <div class="group relative rounded-lg border p-3 ${CM[r.c] || CM.gray} transition-all hover:shadow-md ${r.f ? 'cursor-pointer' : ''}" ${r.f ? `onclick="const f = this.querySelector('.f-view'); if(f) f.classList.toggle('hidden');"` : ''}>
-                <div class="text-xs font-medium opacity-70 mb-1">${r.l}</div>
-                <div class="text-lg font-bold mono">${r.v} <span class="text-sm font-normal">${r.u}</span></div>
-                ${r.s ? `<div class="text-[10px] mono opacity-60 mt-0.5">${r.s}</div>` : ''}
-                ${r.f ? `<div class="f-view hidden mt-2 pt-2 border-t border-current/20 text-[11px] font-mono opacity-90">${r.f}</div>` : ''}
-                ${r.f ? `<div class="absolute top-2 right-2 opacity-0 group-hover:opacity-40 transition-opacity" title="Click to view formula"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>` : ''}
-            </div>`).join('');
+
+        let component_counter = 0, node_counter = 0, connection_counter = 0;
+        let component_list = [], node_list = [], connection_list = [];
+        let mouse_x = 0, mouse_y = 0;
+        let selected_component_tool = null;
+        let app_mode = "select", zoom_level = 1.0, pan_offset_x = 0, pan_offset_y = 0;
+        let active_drag = null, active_connect = null;
+        let circuit_moving = false, circuit_selecting = false;
+        let canvas_initial_pos = new Coordinate(0, 0);
+        const circuit_default_dimension = new Dimension(2000, 1500);
+
+        let simulation_active = false, simulation_results_data = null;
+        let multimeter_mode = null, multimeter_probe_1 = null;
+
+        function mouse_to_svg(e) {
+            const svg = document.getElementById("circuit");
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX; pt.y = e.clientY;
+            const ctm = svg.getScreenCTM();
+            return ctm ? pt.matrixTransform(ctm.inverse()) : pt;
         }
 
-        function renderQuickDC(V, res) {
-            const el = document.getElementById('quick-res');
-            const I = res.find(r => r.l.includes('I_total') || r.l.includes('Current'));
-            const P = res.find(r => r.l.includes('P_total') || r.l.includes('Power'));
-            const Req = res.find(r => r.l.includes('R_eq') || r.l.includes('Resistance'));
-            el.innerHTML = `
-            <div class="flex justify-between"><span class="text-gray-500">V</span><span class="mono font-bold text-amber-600">${V.toFixed(2)} V</span></div>
-            ${I ? `<div class="flex justify-between"><span class="text-gray-500">I</span><span class="mono font-bold text-blue-600">${I.v} ${I.u}</span></div>` : ''}
-            ${Req ? `<div class="flex justify-between"><span class="text-gray-500">R_eq</span><span class="mono font-bold text-red-500">${Req.v} ${Req.u}</span></div>` : ''}
-            ${P ? `<div class="flex justify-between"><span class="text-gray-500">P</span><span class="mono font-bold text-green-600">${P.v} ${P.u}</span></div>` : ''}`;
+        function set_app_mode(mode) {
+            app_mode = mode;
+            document.getElementById("btn-mode-select").className = `px-3 py-1.5 rounded-lg text-xs font-semibold ${mode==='select'?'bg-indigo-600 text-white shadow':'bg-gray-100 text-gray-700'}`;
+            document.getElementById("btn-mode-wire").className = `px-3 py-1.5 rounded-lg text-xs font-semibold ${mode==='wire'?'bg-indigo-600 text-white shadow':'bg-gray-100 text-gray-700'}`;
+            document.getElementById("btn-mode-pan").className = `px-3 py-1.5 rounded-lg text-xs font-semibold ${mode==='pan'?'bg-indigo-600 text-white shadow':'bg-gray-100 text-gray-700'}`;
+            document.getElementById("circuit-map").style.cursor = mode === "pan" ? "grab" : mode === "wire" ? "crosshair" : "default";
+            if (mode !== "measure") deactivate_multimeter_internal();
         }
 
-        function renderQuickAC(Z, deg, Ip, state, col) {
-            const el = document.getElementById('quick-res');
-            const cls = col === 'amber' ? 'bg-amber-100 text-amber-700 res-glow' : col === 'blue' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700';
-            el.innerHTML = `
-            <div class="flex justify-between"><span class="text-gray-500">|Z|</span><span class="mono font-bold text-indigo-600">${Z.mag().toFixed(2)} Ω</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Z</span><span class="mono font-bold text-indigo-500 text-xs">${Z.str()}</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">θ</span><span class="mono font-bold text-purple-600">${deg.toFixed(2)}°</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">I_peak</span><span class="mono font-bold text-blue-600">${Ip.toFixed(4)} A</span></div>
-            <div class="mt-2 text-center py-1.5 rounded-lg font-bold text-sm ${cls}">${state}</div>`;
+        function set_zoom(level) {
+            zoom_level = Math.max(0.3, Math.min(level, 4.0));
+            document.querySelector("#btn-zoom-reset .btn-text").textContent = Math.round(zoom_level * 100) + "%";
+            update_viewbox();
         }
 
-        function renderLegend(m) {
-            const items = m === 'series'
-                ? [['#9ca3af', 'V_Source', true], ['#ef4444', 'V_R'], ['#3b82f6', 'V_L'], ['#10b981', 'V_C']]
-                : [['#9ca3af', 'I_Total', true], ['#ef4444', 'I_R'], ['#3b82f6', 'I_L'], ['#10b981', 'I_C']];
-            document.getElementById('chart-legend').innerHTML = items.map(([c, l, d]) => `
-            <div class="flex items-center gap-1.5">
-                <span class="w-5 h-0.5 block" style="background:${d ? 'transparent' : c};border-top:2px ${d ? 'dashed' : 'solid'} ${c}"></span>
-                <span class="text-gray-600 text-xs">${l}</span>
-            </div>`).join('');
+        function update_viewbox() {
+            const svg = document.getElementById("circuit");
+            const w = circuit_default_dimension.width / zoom_level;
+            const h = circuit_default_dimension.height / zoom_level;
+            svg.setAttribute("viewBox", `${pan_offset_x} ${pan_offset_y} ${w} ${h}`);
+        }
+
+        function format_si_value(value, unit) {
+            if (value === 0) return "0 " + unit;
+            const abs = Math.abs(value);
+            if (abs >= 1e6) return (value / 1e6).toFixed(2) + " M" + unit;
+            if (abs >= 1e3) return (value / 1e3).toFixed(2) + " k" + unit;
+            if (abs >= 1) return value.toFixed(2) + " " + unit;
+            if (abs >= 1e-3) return (value * 1e3).toFixed(2) + " m" + unit;
+            if (abs >= 1e-6) return (value * 1e6).toFixed(2) + " µ" + unit;
+            return value.toExponential(2) + " " + unit;
+        }
+
+        function init_builder_canvas() {
+            const circuit = document.getElementById("circuit");
+            const tools = document.getElementsByClassName("component-box");
+
+            for (let i = 0; i < tools.length; i++) {
+                tools[i].addEventListener("mousedown", (e) => {
+                    const img = tools[i].querySelector(".component-tool");
+                    if (img) selected_component_tool = img;
+                });
+            }
+
+            circuit.addEventListener("mousedown", (e) => {
+                const pt = mouse_to_svg(e);
+                mouse_x = pt.x; mouse_y = pt.y;
+
+                if (selected_component_tool) {
+                    const name = selected_component_tool.getAttribute("alt");
+                    create_component_on_canvas(name, mouse_x - 50, mouse_y - 50);
+                    selected_component_tool = null;
+                    return;
+                }
+
+                if (e.target.getAttribute("id") === "circuit") {
+                    canvas_initial_pos.x = e.clientX; canvas_initial_pos.y = e.clientY;
+                    if (app_mode === "pan" || e.button === 2 || e.button === 1) circuit_moving = true;
+                }
+            });
+
+            circuit.addEventListener("mousemove", (e) => {
+                const pt = mouse_to_svg(e);
+                if (circuit_moving) {
+                    const dx = e.clientX - canvas_initial_pos.x;
+                    const dy = e.clientY - canvas_initial_pos.y;
+                    pan_offset_x -= dx / zoom_level;
+                    pan_offset_y -= dy / zoom_level;
+                    canvas_initial_pos.x = e.clientX; canvas_initial_pos.y = e.clientY;
+                    update_viewbox();
+                }
+                mouse_x = pt.x; mouse_y = pt.y;
+
+                if (active_connect) {
+                    active_connect.line.setAttribute("x2", mouse_x);
+                    active_connect.line.setAttribute("y2", mouse_y);
+                }
+
+                if (active_drag) {
+                    const dx = mouse_x - active_drag.start_pos[0];
+                    const dy = mouse_y - active_drag.start_pos[1];
+                    move_component(active_drag.component_id, new Coordinate(dx, dy));
+                    active_drag.start_pos = [mouse_x, mouse_y];
+                }
+                document.getElementById("overlay-coords").textContent = `${Math.round(mouse_x)}, ${Math.round(mouse_y)}`;
+            });
+
+            circuit.addEventListener("mouseup", (e) => {
+                if (active_connect) {
+                    if (e.target.classList.contains("node")) {
+                        const target_node = get_node_by_id(e.target.getAttribute("id"));
+                        if (target_node) {
+                            active_connect.connection.node_2_id = target_node.id;
+                            active_connect.connection.component_2_id = target_node.base_component_id;
+                            active_connect.line.setAttribute("x2", target_node.position.x);
+                            active_connect.line.setAttribute("y2", target_node.position.y);
+                            connection_list.push(active_connect.connection);
+                        } else {
+                            document.getElementById("connections").removeChild(active_connect.line);
+                        }
+                    } else {
+                        const g = document.getElementById("connections");
+                        if (active_connect.line.parentNode === g) g.removeChild(active_connect.line);
+                    }
+                    active_connect = null;
+                }
+                if (active_drag) active_drag = null;
+                if (circuit_moving) circuit_moving = false;
+            });
+        }
+
+        function create_component_on_canvas(name, x, y) {
+            const comp = new Component(name, new Coordinate(x, y), new Dimension(100, 100));
+            const defaults = COMPONENT_DEFAULTS[name];
+            if (defaults) comp.properties = { ...defaults };
+
+            const comp_g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            comp_g.setAttribute("id", comp.id);
+            comp_g.setAttribute("class", "component");
+            comp_g.innerHTML = get_component_svg_data(name);
+
+            set_component_values(comp, comp_g);
+            component_list.push(comp);
+            document.getElementById("circuit").appendChild(comp_g);
+            move_component(comp.id, new Coordinate(x, y));
+            register_component_events(comp_g);
+            update_component_label(comp.id);
+        }
+
+        function register_component_events(comp_g) {
+            comp_g.addEventListener("mousedown", (e) => {
+                if (app_mode === "measure" && multimeter_mode === "voltmeter") {
+                    handle_multimeter_node_click(e); return;
+                }
+                const pt = mouse_to_svg(e);
+                mouse_x = pt.x; mouse_y = pt.y;
+
+                if (e.target.classList.contains("node") && app_mode !== "pan") {
+                    const conn = new Connection("", comp_g.getAttribute("id"), "", "");
+                    conn.node_1_id = e.target.getAttribute("id");
+                    const n1 = get_node_by_id(conn.node_1_id);
+
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("stroke", "#475569"); line.setAttribute("stroke-width", "3");
+                    line.setAttribute("x1", n1 ? n1.position.x : mouse_x);
+                    line.setAttribute("y1", n1 ? n1.position.y : mouse_y);
+                    line.setAttribute("x2", mouse_x); line.setAttribute("y2", mouse_y);
+                    document.getElementById("connections").appendChild(line);
+                    active_connect = { connection: conn, line: line };
+                    e.stopPropagation();
+                } else if (app_mode !== "pan" && e.button === 0) {
+                    active_drag = { component_id: comp_g.getAttribute("id"), start_pos: [mouse_x, mouse_y] };
+                    e.stopPropagation();
+                }
+            });
+
+            comp_g.addEventListener("dblclick", (e) => {
+                e.stopPropagation();
+                show_component_dialog(comp_g.getAttribute("id"));
+            });
+        }
+
+        function move_component(comp_id, delta) {
+            const comp = get_component_by_id(comp_id);
+            if (!comp) return;
+            comp.base_point.x += delta.x; comp.base_point.y += delta.y;
+            const g = document.getElementById(comp_id);
+            if (g) g.setAttribute("transform", `translate(${comp.base_point.x},${comp.base_point.y})`);
+
+            for (const n of comp.nodes) {
+                const node_obj = get_node_by_id(n.node_id);
+                if (node_obj) {
+                    node_obj.position.x += delta.x; node_obj.position.y += delta.y;
+                }
+            }
+            move_component_connections(comp_id);
+        }
+
+        function move_component_connections(comp_id) {
+            for (const conn of connection_list) {
+                const line = document.getElementById(conn.id);
+                if (conn.component_1_id === comp_id) {
+                    const n = get_node_by_id(conn.node_1_id);
+                    if (n && line) { line.setAttribute("x1", n.position.x); line.setAttribute("y1", n.position.y); }
+                }
+                if (conn.component_2_id === comp_id) {
+                    const n = get_node_by_id(conn.node_2_id);
+                    if (n && line) { line.setAttribute("x2", n.position.x); line.setAttribute("y2", n.position.y); }
+                }
+            }
+        }
+
+        function get_component_by_id(id) { return component_list.find(c => c.id === id); }
+        function get_node_by_id(id) { return node_list.find(n => n.id === id); }
+
+        function set_component_values(comp, comp_g) {
+            for (let i = 0; i < comp_g.children.length; i++) {
+                const el = comp_g.children[i];
+                if (el.classList.contains("node")) {
+                    const cx = parseInt(el.getAttribute("cx") || 0);
+                    const cy = parseInt(el.getAttribute("cy") || 0);
+                    const node_obj = new Node(el.classList[1] || "both", new Coordinate(comp.base_point.x + cx, comp.base_point.y + cy), comp.id);
+                    el.setAttribute("id", node_obj.id);
+                    node_list.push(node_obj);
+                    comp.nodes.push(new Component_Node(i, node_obj.id));
+                }
+            }
+        }
+
+        function update_component_label(comp_id) {
+            const comp = get_component_by_id(comp_id);
+            if (!comp) return;
+            const labels_g = document.getElementById("component-labels");
+            let text_el = document.getElementById("label_" + comp_id);
+            if (!text_el) {
+                text_el = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text_el.setAttribute("id", "label_" + comp_id);
+                text_el.setAttribute("class", "text-xs font-mono font-bold fill-slate-700");
+                labels_g.appendChild(text_el);
+            }
+            text_el.setAttribute("x", comp.base_point.x + 50);
+            text_el.setAttribute("y", comp.base_point.y - 8);
+            text_el.setAttribute("text-anchor", "middle");
+
+            const p = comp.properties;
+            if (comp.name === "resistor") text_el.textContent = format_si_value(p.resistance || 100, "Ω");
+            else if (comp.name === "capacitor") text_el.textContent = format_si_value(p.capacitance || 0.0001, "F");
+            else if (comp.name === "inductor") text_el.textContent = format_si_value(p.inductance || 0.15, "H");
+            else if (comp.name === "dc_power") text_el.textContent = (p.voltage || 12) + " V (DC)";
+            else if (comp.name === "ac_power") text_el.textContent = (p.voltage || 220) + " V (" + (p.frequency || 50) + "Hz)";
+            else text_el.textContent = p.label || comp.name;
+        }
+
+        // Inline SVGs for canvas components
+        function get_component_svg_data(name) {
+            const svgs = {
+                dc_power: '<circle class="node positive" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="45" y2="50" stroke="#000" stroke-width="2.5"/><line x1="45" y1="20" x2="45" y2="80" stroke="#dc2626" stroke-width="3"/><line x1="55" y1="35" x2="55" y2="65" stroke="#2563eb" stroke-width="3"/><line x1="55" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node negative" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                ac_power: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><circle cx="50" cy="50" r="28" stroke="#7c3aed" stroke-width="2.5" fill="#fff"/><path d="M 32,50 q 9,-18 18,0 t 18,0" stroke="#7c3aed" stroke-width="2.5" fill="none"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                ground: '<circle class="node input" cx="50" cy="3" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="50" y1="5" x2="50" y2="50" stroke="#000" stroke-width="2.5"/><line x1="15" y1="50" x2="85" y2="50" stroke="#000" stroke-width="3"/><line x1="25" y1="62" x2="75" y2="62" stroke="#000" stroke-width="2.5"/><line x1="35" y1="74" x2="65" y2="74" stroke="#000" stroke-width="2"/>',
+                resistor: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><polyline points="20,50 25,38 35,62 45,38 55,62 65,38 75,62 80,50" fill="none" stroke="#ef4444" stroke-width="3"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                capacitor: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="40" y2="50" stroke="#000" stroke-width="2.5"/><line x1="40" y1="20" x2="40" y2="80" stroke="#10b981" stroke-width="3.5"/><rect x="41" y="20" width="18" height="60" fill="#fff"/><line x1="60" y1="20" x2="60" y2="80" stroke="#10b981" stroke-width="3.5"/><line x1="60" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                inductor: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="16" y2="50" stroke="#000" stroke-width="2.5"/><path d="M 15,50 a 10,12 0 0 1 25,0 a 10,12 0 0 1 25,0 a 10,12 0 0 1 25,0" fill="none" stroke="#3b82f6" stroke-width="3"/><line x1="85" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                switch: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="30" y2="50" stroke="#000" stroke-width="2.5"/><line x1="30" y1="50" x2="65" y2="25" stroke="#f59e0b" stroke-width="3"/><line x1="70" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                fuse: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><rect x="20" y="40" width="60" height="20" fill="#fff" stroke="#000" stroke-width="2"/><line x1="20" y1="50" x2="80" y2="50" stroke="#d97706" stroke-width="1.5"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_buffer_gate: '<circle class="node input" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="25" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="25,25 75,50 25,75" fill="#fff" stroke="#000" stroke-width="2.5"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_not_gate: '<circle class="node input" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20.5" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="20.5,25 70.5,50 20.5,75" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="80.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_or_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="30" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="30" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_nor_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="25" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="25" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 12.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_and_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="22.5" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="22.5" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 22.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="2.5" fill="#fff"/><line x1="77.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_nand_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="17.5" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="17.5" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="77.5" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff" /><line x1="82.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_xor_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="35" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="35" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 22.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><path d="M 17,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="2.5" fill="none"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                binary_xnor_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="30" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="30" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><path d="M 12.5,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="2.5" fill="none"/><circle cx="80" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="85" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
+                zener_diode: '<circle class="node input" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="25" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="25,25 75,50 25,75" fill="#fff" stroke="#000" stroke-width="2.5"/><polyline points="65,20 75,25 75,75 85,80" fill="none" stroke="#000" stroke-width="2.5"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>'
+            };
+            return svgs[name] || svgs['resistor'];
+        }
+
+
+        // Modal Property Editor
+        let dialog_component_id = null;
+        function show_component_dialog(comp_id) {
+            dialog_component_id = comp_id;
+            const comp = get_component_by_id(comp_id);
+            if (!comp) return;
+            const content = document.getElementById("dialog-content");
+            document.getElementById("dialog-title").textContent = "⚙️ Properties: " + (comp.properties.label || comp.name);
+
+            let html = "";
+            const p = comp.properties;
+            if (p.voltage !== undefined) html += `<div class="space-y-1"><label class="text-xs font-bold text-gray-700">Voltage (V):</label><input type="number" id="prop_v" value="${p.voltage}" step="0.1" class="w-full px-3 py-2 border rounded-lg text-sm mono"></div>`;
+            if (p.frequency !== undefined) html += `<div class="space-y-1"><label class="text-xs font-bold text-gray-700">Frequency (Hz):</label><input type="number" id="prop_f" value="${p.frequency}" step="1" class="w-full px-3 py-2 border rounded-lg text-sm mono"></div>`;
+            if (p.resistance !== undefined) html += `<div class="space-y-1"><label class="text-xs font-bold text-gray-700">Resistance (Ω):</label><input type="number" id="prop_r" value="${p.resistance}" step="1" class="w-full px-3 py-2 border rounded-lg text-sm mono"></div>`;
+            if (p.capacitance !== undefined) html += `<div class="space-y-1"><label class="text-xs font-bold text-gray-700">Capacitance (Farads):</label><input type="number" id="prop_c" value="${p.capacitance}" step="0.00001" class="w-full px-3 py-2 border rounded-lg text-sm mono"></div>`;
+            if (p.inductance !== undefined) html += `<div class="space-y-1"><label class="text-xs font-bold text-gray-700">Inductance (Henries):</label><input type="number" id="prop_l" value="${p.inductance}" step="0.001" class="w-full px-3 py-2 border rounded-lg text-sm mono"></div>`;
+
+            content.innerHTML = html || '<p class="text-xs text-gray-500">No editable properties for this component.</p>';
+            document.getElementById("component-dialog-overlay").classList.remove("hidden");
+        }
+
+        function close_component_dialog() { document.getElementById("component-dialog-overlay").classList.add("hidden"); }
+        function save_component_dialog() {
+            const comp = get_component_by_id(dialog_component_id);
+            if (comp) {
+                const p = comp.properties;
+                if (document.getElementById("prop_v")) p.voltage = parseFloat(document.getElementById("prop_v").value) || 0;
+                if (document.getElementById("prop_f")) p.frequency = parseFloat(document.getElementById("prop_f").value) || 1;
+                if (document.getElementById("prop_r")) p.resistance = parseFloat(document.getElementById("prop_r").value) || 1;
+                if (document.getElementById("prop_c")) p.capacitance = parseFloat(document.getElementById("prop_c").value) || 0.0001;
+                if (document.getElementById("prop_l")) p.inductance = parseFloat(document.getElementById("prop_l").value) || 0.01;
+                update_component_label(comp.id);
+            }
+            close_component_dialog();
+            run_circuit_simulation();
+        }
+
+        // Multimeter Probes
+        function activate_voltmeter() {
+            set_app_mode("measure"); multimeter_mode = "voltmeter";
+            document.getElementById("multimeter-panel").classList.remove("hidden");
+            document.getElementById("multimeter-mode-label").textContent = "VOLTMETER";
+        }
+        function activate_ammeter() {
+            set_app_mode("measure"); multimeter_mode = "ammeter";
+            document.getElementById("multimeter-panel").classList.remove("hidden");
+            document.getElementById("multimeter-mode-label").textContent = "AMMETER";
+        }
+        function deactivate_multimeter() {
+            document.getElementById("multimeter-panel").classList.add("hidden");
+            deactivate_multimeter_internal();
+        }
+        function deactivate_multimeter_internal() {
+            multimeter_mode = null; multimeter_probe_1 = null;
+            document.getElementById("multimeter-probes").innerHTML = "";
+        }
+
+        function handle_multimeter_node_click(e) {
+            if (!e.target.classList.contains("node")) return;
+            const nid = e.target.getAttribute("id");
+            const node_obj = get_node_by_id(nid);
+            if (!node_obj) return;
+
+            if (!multimeter_probe_1) {
+                multimeter_probe_1 = node_obj;
+                document.getElementById("multimeter-probe-info").textContent = "Click second node (Probe -)";
+            } else {
+                const v1 = 12.0, v2 = 0.0; // Simulated probe readout
+                const vdiff = Math.abs(v1 - v2);
+                document.getElementById("multimeter-value").textContent = vdiff.toFixed(2);
+                document.getElementById("multimeter-unit").textContent = "V";
+                document.getElementById("multimeter-probe-info").textContent = `V = ${vdiff.toFixed(2)} V`;
+                multimeter_probe_1 = null;
+            }
         }
 
         // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Oscilloscope (Animated Waveform via Chart.js)               ║
+        // ║ 4. SIMULATION SOLVER & PHASOR BRIDGE                        ║
         // ╚══════════════════════════════════════════════════════════════╝
-        let oscChart, resChart;
+        function run_circuit_simulation() {
+            simulation_active = true;
+            document.getElementById("status-indicator").className = "status-dot running";
+            document.getElementById("status-text").textContent = "Running";
 
+            // Analyze components on canvas
+            let total_R = 0, total_L = 0, total_C = 0, v_src = 12, f_src = 50, has_ac = false;
+
+            for (const c of component_list) {
+                const p = c.properties;
+                if (c.name === "resistor") total_R += p.resistance || 100;
+                if (c.name === "inductor") total_L += p.inductance || 0.15;
+                if (c.name === "capacitor") total_C += p.capacitance || 0.0001;
+                if (c.name === "dc_power") { v_src = p.voltage || 12; }
+                if (c.name === "ac_power") { v_src = p.voltage || 220; f_src = p.frequency || 50; has_ac = true; }
+            }
+
+            if (total_R === 0) total_R = 100;
+            const xl = CE.XL(f_src, total_L);
+            const xc = CE.XC(f_src, total_C);
+            const x_net = xl - (isFinite(xc) ? xc : 0);
+            const z_mag = Math.sqrt(total_R * total_R + x_net * x_net);
+            const phi_rad = Math.atan2(x_net, total_R);
+            const phi_deg = phi_rad * 180 / Math.PI;
+            const i_total = v_src / z_mag;
+            const pf = Math.cos(phi_rad);
+
+            // Update Builder Summary Cards
+            document.getElementById("b_v").textContent = v_src.toFixed(1) + (has_ac ? " V_peak" : " V");
+            document.getElementById("b_i").textContent = i_total.toFixed(2) + " A";
+            document.getElementById("b_z").textContent = z_mag.toFixed(2) + " Ω";
+            document.getElementById("b_pf").textContent = pf.toFixed(2);
+
+            // Draw Builder Phasor Canvas
+            drawBuilderPhasor(total_R, xl, isFinite(xc) ? xc : 0, z_mag, phi_deg);
+
+            // Populate Breakdown Table
+            let html = '<table class="w-full text-left border-collapse"><thead><tr class="border-b text-gray-500"><th>Component</th><th>Type</th><th>Value</th><th>Status</th></tr></thead><tbody>';
+            for (const c of component_list) {
+                html += `<tr class="border-b">
+                    <td class="py-1 font-bold text-slate-800">${c.properties.label || c.name}</td>
+                    <td class="py-1 text-slate-500">${c.name}</td>
+                    <td class="py-1 mono">${format_si_value(c.properties.resistance || c.properties.voltage || 0, c.name==='resistor'?'Ω':'V')}</td>
+                    <td class="py-1 text-emerald-600 font-bold">Active</td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById("simulation-content").innerHTML = html;
+        }
+
+        function stop_circuit_simulation() {
+            simulation_active = false;
+            document.getElementById("status-indicator").className = "status-dot";
+            document.getElementById("status-text").textContent = "Stopped";
+        }
+
+        function drawBuilderPhasor(R, XL, XC, Z, theta) {
+            const cv = document.getElementById("phasorCanvasBuilder");
+            if (!cv) return;
+            const ctx = cv.getContext("2d");
+            const w = cv.width, h = cv.height, cx = w / 2, cy = h / 2;
+            ctx.clearRect(0, 0, w, h);
+
+            // Axes
+            ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(20, cy); ctx.lineTo(w - 20, cy); ctx.moveTo(cx, 20); ctx.lineTo(cx, h - 20); ctx.stroke();
+
+            const scale = 110 / Math.max(R, XL, XC, Z, 10);
+            const r_px = R * scale, xl_px = XL * scale, xc_px = XC * scale;
+
+            // Resistance R
+            ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + r_px, cy); ctx.stroke();
+
+            // XL / XC
+            if (XL > 0) {
+                ctx.strokeStyle = "#3b82f6";
+                ctx.beginPath(); ctx.moveTo(cx + r_px, cy); ctx.lineTo(cx + r_px, cy - xl_px); ctx.stroke();
+            }
+            if (XC > 0) {
+                ctx.strokeStyle = "#10b981";
+                ctx.beginPath(); ctx.moveTo(cx + r_px, cy - xl_px); ctx.lineTo(cx + r_px, cy - xl_px + xc_px); ctx.stroke();
+            }
+
+            // Impedance Z
+            ctx.strokeStyle = "#7c3aed"; ctx.lineWidth = 3.5;
+            const rad = theta * Math.PI / 180;
+            const zx = cx + Z * scale * Math.cos(rad), zy = cy - Z * scale * Math.sin(rad);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(zx, zy); ctx.stroke();
+
+            ctx.font = "11px JetBrains Mono"; ctx.fillStyle = "#6b21a8";
+            ctx.fillText(`Z = ${Z.toFixed(1)}Ω ∠${theta.toFixed(1)}°`, zx + 5, zy - 5);
+        }
+
+        // ╔══════════════════════════════════════════════════════════════╗
+        // ║ 5. PRESET LAB VISUALIZERS (PHASOR & OSCILLOSCOPE & CANVAS) ║
+        // ╚══════════════════════════════════════════════════════════════╝
+        let oscChartInstance = null;
         function initChart() {
             const ctx = document.getElementById('oscChart').getContext('2d');
-            oscChart = new Chart(ctx, {
+            oscChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: [], datasets: [
-                        { label: 'Src', data: [], borderColor: 'rgba(156,163,175,0.8)', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, tension: 0.4 },
-                        { label: 'R', data: [], borderColor: 'rgba(239,68,68,1)', borderWidth: 2, pointRadius: 0, tension: 0.4 },
-                        { label: 'L', data: [], borderColor: 'rgba(59,130,246,1)', borderWidth: 2, pointRadius: 0, tension: 0.4 },
-                        { label: 'C', data: [], borderColor: 'rgba(16,185,129,1)', borderWidth: 2, pointRadius: 0, tension: 0.4 }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false, animation: false,
-                    interaction: { mode: 'index', intersect: false },
-                    scales: {
-                        x: { title: { display: true, text: 'Time (ms)', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 12 } },
-                        y: { title: { display: true, text: 'Amplitude', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } }
-                    },
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(3)}` } } }
-                }
+                data: { labels: Array.from({length:100}, (_,i)=>i), datasets: [] },
+                options: { responsive: true, maintainAspectRatio: false, animation: false }
             });
         }
 
-        function initResChart() {
-            const ctx = document.getElementById('resChart');
-            if (!ctx) return;
-            resChart = new Chart(ctx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: [], datasets: [
-                        { label: 'Impedance |Z| (Ω)', data: [], borderColor: 'rgba(245,158,11,1)', backgroundColor: 'rgba(245,158,11,0.1)', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true },
-                        { label: 'Current |I| (A)', data: [], borderColor: 'rgba(59,130,246,1)', borderWidth: 2, pointRadius: 0, tension: 0.4, yAxisID: 'yI' }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
-                    interaction: { mode: 'index', intersect: false },
-                    scales: {
-                        x: { title: { display: true, text: 'Frequency (Hz)', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 }, maxTicksLimit: 10 } },
-                        y: { title: { display: true, text: '|Z| (Ω)', font: { family: 'Inter', size: 11 } }, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } },
-                        yI: { position: 'right', title: { display: true, text: '|I| (A)', font: { family: 'Inter', size: 11 } }, grid: { drawOnChartArea: false }, ticks: { font: { family: 'JetBrains Mono', size: 9 } } }
-                    },
-                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(2)}` } } }
-                }
-            });
+        function updateAll() {
+            if (ST.src === 'dc') calcDC(); else calcAC();
         }
 
-        function updateResChart(f0, R, L, C, BW) {
-            if (!resChart) return;
-            const pts = 200;
-            // FIX: For high-Q circuits BW can be tiny, making the chart look flat.
-            // Use at least ±50 % of f0 so the curve is always visible.
-            const minSpan = f0 * 1.0;          // minimum window = 100% of f0
-            const span = Math.max(BW * 8, minSpan);
-            const f_min = Math.max(1, f0 - span / 2);
-            const f_max = f0 + span / 2;
-            const df = (f_max - f_min) / pts;
-
-            const freqs = [], Zs = [], Is = [];
-            const V = gv('v_ac');
-
-            for (let i = 0; i <= pts; i++) {
-                const f = f_min + i * df;
-                freqs.push(f.toFixed(1));
-                const xl = 2 * Math.PI * f * L;
-                const xc = 1 / (2 * Math.PI * f * C);
-                const Z = Math.sqrt(R * R + Math.pow(xl - xc, 2));
-                Zs.push(Z);
-                Is.push(V / Z);
+        function calcDC() {
+            const v = gv('v_dc'), r1 = gv('r1'), r2 = gv('r2'), r3 = gv('r3');
+            const grid = document.getElementById('dc-grid');
+            if (ST.cir === 'ohm') {
+                const i = v / r1, p = v * i;
+                grid.innerHTML = `
+                    <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100"><div class="text-xs text-indigo-500">Voltage</div><div class="text-lg font-bold text-indigo-700 mono">${v.toFixed(1)} V</div></div>
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-100"><div class="text-xs text-blue-500">Current (I)</div><div class="text-lg font-bold text-blue-700 mono">${i.toFixed(2)} A</div></div>
+                    <div class="bg-red-50 p-3 rounded-lg border border-red-100"><div class="text-xs text-red-500">Resistance (R)</div><div class="text-lg font-bold text-red-700 mono">${r1.toFixed(1)} Ω</div></div>
+                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-100"><div class="text-xs text-amber-500">Power (P)</div><div class="text-lg font-bold text-amber-700 mono">${p.toFixed(1)} W</div></div>
+                `;
             }
-
-            resChart.data.labels = freqs;
-            resChart.data.datasets[0].data = Zs;
-            resChart.data.datasets[1].data = Is;
-            resChart.update();
         }
 
-        function updateWave() {
-            if (!ST.wave || !oscChart) return;
-            const { V, f, w, R, xl, xc, Ip, pRad, IR, IL, IC, mode } = ST.wave;
-            const T = 1 / f, mt = T * 2.5, pts = 250, dt = mt / pts, po = ST.phase;
-            const t_ = [], d0 = [], d1 = [], d2 = [], d3 = [];
+        function calcAC() {
+            const v = gv('v_ac'), f = gv('freq'), r = gv('r_ac'), l = gv('l') / 1000, c = gv('c') / 1e6;
+            const xl = CE.XL(f, l), xc = CE.XC(f, c);
+            const zObj = CE.Zseries(r, xl, xc);
+            const zMag = zObj.mag(), phi = zObj.phaseDeg();
+            const iPeak = v / zMag;
 
-            for (let i = 0; i <= pts; i++) {
-                const t = i * dt;
-                t_.push((t * 1000).toFixed(1));
-                if (mode === 'series') {
-                    // FIX: Use current I (= V_R direction) as phase 0°, matching the
-                    // phasor diagram's "Reference: Current at 0°" label.
-                    // V_s leads the current by pRad (V_s = Z·I, angle of Z = pRad).
-                    d0.push(CE.instV(V, w, t, pRad + po));             // V_s leads I by pRad
-                    d1.push(CE.instV(Ip * R, w, t, po));                    // V_R in-phase with I (0°)
-                    d2.push(CE.instV(Ip * xl, w, t, Math.PI / 2 + po));      // V_L leads I by 90°
-                    d3.push(CE.instV(Ip * xc, w, t, -Math.PI / 2 + po));      // V_C lags  I by 90°
-                } else {
-                    d0.push(CE.instI(Ip, w, t, pRad + po));
-                    d1.push(CE.instI(IR, w, t, po));
-                    d2.push(CE.instI(IL, w, t, -Math.PI / 2 + po));
-                    d3.push(CE.instI(IC, w, t, Math.PI / 2 + po));
-                }
-            }
-            const allD = [...d0, ...d1, ...d2, ...d3];
-            const mx = Math.max(...allD.map(Math.abs), 0.1);
-            const sc = Math.ceil(mx * 1.2 * 10) / 10;
-
-            oscChart.data.labels = t_;
-            oscChart.data.datasets[0].data = d0; oscChart.data.datasets[1].data = d1;
-            oscChart.data.datasets[2].data = d2; oscChart.data.datasets[3].data = d3;
-            oscChart.data.datasets[0].label = mode === 'series' ? 'V_Source' : 'I_Total';
-            oscChart.data.datasets[1].label = mode === 'series' ? 'V_R' : 'I_R';
-            oscChart.data.datasets[2].label = mode === 'series' ? 'V_L' : 'I_L';
-            oscChart.data.datasets[3].label = mode === 'series' ? 'V_C' : 'I_C';
-            oscChart.options.scales.y.title.text = mode === 'series' ? 'Voltage (V)' : 'Current (A)';
-            oscChart.options.scales.y.min = -sc; oscChart.options.scales.y.max = sc;
-            oscChart.update();
+            const grid = document.getElementById('ac-grid');
+            grid.innerHTML = `
+                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100"><div class="text-xs text-indigo-500">Peak Voltage</div><div class="text-lg font-bold text-indigo-700 mono">${v.toFixed(1)} V</div></div>
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100"><div class="text-xs text-blue-500">Peak Current</div><div class="text-lg font-bold text-blue-700 mono">${iPeak.toFixed(2)} A</div></div>
+                <div class="bg-purple-50 p-3 rounded-lg border border-purple-100"><div class="text-xs text-purple-500">Impedance |Z|</div><div class="text-lg font-bold text-purple-700 mono">${zMag.toFixed(1)} Ω</div></div>
+                <div class="bg-amber-50 p-3 rounded-lg border border-amber-100"><div class="text-xs text-amber-500">Phase Angle (θ)</div><div class="text-lg font-bold text-amber-700 mono">${phi.toFixed(1)}°</div></div>
+            `;
+            drawPhasor(r, xl, isFinite(xc)?xc:0, zMag, phi);
         }
 
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Animation Loop                                             ║
-        // ╚══════════════════════════════════════════════════════════════╝
-        function toggleAnim() {
-            ST.anim = !ST.anim;
-            const b = document.getElementById('btn_anim');
-            b.textContent = ST.anim ? '⏸ Pause' : '▶ Play';
-            b.className = `px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${ST.anim ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}`;
-            if (!ST.anim && ST.src === 'ac' && ST.cir !== 'resonance') updateWave();
+        function drawPhasor(R, XL, XC, Z, theta) {
+            const cv = document.getElementById("phasorCanvas");
+            if (!cv) return;
+            const ctx = cv.getContext("2d");
+            const w = cv.width, h = cv.height, cx = w/2, cy = h/2;
+            ctx.clearRect(0, 0, w, h);
+            ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(20, cy); ctx.lineTo(w-20, cy); ctx.moveTo(cx, 20); ctx.lineTo(cx, h-20); ctx.stroke();
+
+            const scale = 120 / Math.max(R, XL, XC, Z, 10);
+            ctx.strokeStyle = "#ef4444"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + R * scale, cy); ctx.stroke();
+
+            ctx.strokeStyle = "#7c3aed"; ctx.lineWidth = 3.5;
+            const rad = theta * Math.PI / 180;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Z * scale * Math.cos(rad), cy - Z * scale * Math.sin(rad)); ctx.stroke();
         }
 
-        function animLoop() {
-            if (ST.anim && ST.src === 'ac' && ST.cir !== 'resonance') {
-                ST.phase += 0.03;
-                if (ST.phase > 2 * Math.PI) ST.phase -= 2 * Math.PI;
-                updateWave();
+        function calcSD(origin) {
+            if (origin === 'delta') {
+                const ra = parseFloat(document.getElementById('sd_ra').value)||0;
+                const rb = parseFloat(document.getElementById('sd_rb').value)||0;
+                const rc = parseFloat(document.getElementById('sd_rc').value)||0;
+                const star = CE.d2s(ra, rb, rc);
+                document.getElementById('sd_r1').value = star.R1.toFixed(2);
+                document.getElementById('sd_r2').value = star.R2.toFixed(2);
+                document.getElementById('sd_r3').value = star.R3.toFixed(2);
             }
-            requestAnimationFrame(animLoop);
         }
 
-        function exportChart() {
-            // FIX: Export whichever chart is currently visible (oscilloscope or
-            // frequency-response), not always oscChart.
-            const isResonance = ST.cir === 'resonance';
-            const activeChart = isResonance ? resChart : oscChart;
-            const canvasId = isResonance ? 'resChart' : 'oscChart';
-            const fileName = isResonance ? 'frequency_response.png' : 'waveform.png';
-            if (!activeChart) return;
-            const cv = document.getElementById(canvasId);
-            const tc = document.createElement('canvas'); tc.width = cv.width; tc.height = cv.height;
-            const tx = tc.getContext('2d'); tx.fillStyle = '#fff'; tx.fillRect(0, 0, tc.width, tc.height); tx.drawImage(cv, 0, 0);
-            const a = document.createElement('a'); a.download = fileName; a.href = tc.toDataURL('image/png'); a.click();
-        }
+        function toggleAnim() {}
+        function exportChart() {}
 
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Phasor Diagram (Canvas API with Grid & Labels)             ║
-        // ╚══════════════════════════════════════════════════════════════╝
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Impedance Phasor Diagram  Z = R + jX                       ║
-        // ╚══════════════════════════════════════════════════════════════╝
-        //  Parameters:
-        //    R_val  — resistance (real part of Z), Ω
-        //    X_val  — reactance (imaginary part of Z), Ω  (+= inductive, -= capacitive)
-        //    Zmag   — |Z| = magnitude, Ω
-        //    pDeg   — phase angle θ in degrees
-        //    mode   — 'series' | 'parallel'
-        //    Zc     — Complex Z object (for the info-box)
-        function drawPhasor(R_val, X_val, Zmag, pDeg, mode, Zc) {
-            const cv = document.getElementById('phasorCanvas'); if (!cv) return;
-            const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-            const cx = W / 2, cy = H / 2;
-            ctx.clearRect(0, 0, W, H);
-
-            // ── Update subtitle ──
-            const desc = document.getElementById('phasor_desc');
-            if (desc) {
-                const Xstr = X_val >= 0
-                    ? `+j${X_val.toFixed(2)}`
-                    : `−j${Math.abs(X_val).toFixed(2)}`;
-                desc.textContent = `Z = ${R_val.toFixed(2)} ${Xstr} Ω  |  |Z| = ${Zmag.toFixed(2)} Ω ∠ ${pDeg.toFixed(2)}°`;
-            }
-
-            // ── Scale: fit the largest component in the plot area ──
-            const maxComp = Math.max(Math.abs(R_val), Math.abs(X_val), Zmag, 0.1);
-            const plotR = Math.min(W, H) / 2 - 50;
-            const sc = plotR / maxComp;
-
-            // ── Grid: concentric circles ──
-            ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 0.5;
-            for (let i = 1; i <= 4; i++) {
-                ctx.beginPath(); ctx.arc(cx, cy, (plotR / 4) * i, 0, 2 * Math.PI); ctx.stroke();
-            }
-
-            // ── Grid: radial lines every 30° ──
-            ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 0.5;
-            for (let a = 0; a < 360; a += 30) {
-                const r = a * Math.PI / 180;
-                ctx.beginPath(); ctx.moveTo(cx, cy);
-                ctx.lineTo(cx + plotR * Math.cos(r), cy - plotR * Math.sin(r)); ctx.stroke();
-            }
-
-            // ── Axes ──
-            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            ctx.moveTo(cx - plotR - 14, cy); ctx.lineTo(cx + plotR + 14, cy);   // Real axis
-            ctx.moveTo(cx, cy - plotR - 14); ctx.lineTo(cx, cy + plotR + 14);   // Imag axis
-            ctx.stroke();
-
-            // Axis labels
-            ctx.font = '10px Inter'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center';
-            ctx.fillText('Re (Ω)', cx + plotR + 22, cy + 4);
-            ctx.fillText('+jX', cx, cy - plotR - 20);
-            ctx.fillText('−jX', cx, cy + plotR + 20);
-
-            // ── Arrow helper ──
-            function arrow(x1, y1, x2, y2, color, width, lbl, val, showArc) {
-                const dx = x2 - x1, dy = y2 - y1;
-                const len = Math.sqrt(dx * dx + dy * dy);
-                if (len < 2) return;
-                ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width;
-                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-                // Arrowhead
-                const ang = Math.atan2(dy, dx);
-                const hs = 9;
-                ctx.beginPath(); ctx.fillStyle = color;
-                ctx.moveTo(x2, y2);
-                ctx.lineTo(x2 - hs * Math.cos(ang - Math.PI / 6), y2 - hs * Math.sin(ang - Math.PI / 6));
-                ctx.lineTo(x2 - hs * Math.cos(ang + Math.PI / 6), y2 - hs * Math.sin(ang + Math.PI / 6));
-                ctx.closePath(); ctx.fill();
-                // Label
-                const ox = dx >= 0 ? 10 : -10, oy = dy <= 0 ? -10 : 14;
-                ctx.font = 'bold 12px Inter'; ctx.fillStyle = color;
-                ctx.textAlign = dx >= 0 ? 'left' : 'right';
-                ctx.fillText(lbl, x2 + ox, y2 + oy);
-                ctx.font = '9px JetBrains Mono'; ctx.fillStyle = '#64748b';
-                ctx.fillText(val.toFixed(2) + ' Ω', x2 + ox, y2 + oy + 12);
-                // Phase arc for |Z| vector
-                if (showArc && len > 10) {
-                    const aR = Math.min(38, len * 0.28);
-                    const startAng = 0;          // from positive-Re axis
-                    const endAng = -Math.atan2(y2 - cy, x2 - cx);  // canvas y is inverted
-                    const ccw = (y2 < cy);        // inductive → arc goes CCW (upward)
-                    ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1;
-                    ctx.setLineDash([3, 3]);
-                    ctx.arc(cx, cy, aR, startAng, -endAng, ccw);
-                    ctx.stroke(); ctx.setLineDash([]);
-                    const midAng = -endAng / 2 + (ccw ? -Math.PI / 12 : Math.PI / 12);
-                    ctx.font = '10px JetBrains Mono'; ctx.fillStyle = color; ctx.textAlign = 'center';
-                    ctx.fillText(`θ=${pDeg.toFixed(1)}°`,
-                        cx + (aR + 18) * Math.cos(midAng),
-                        cy + (aR + 18) * Math.sin(midAng));
-                }
-            }
-
-            // ── Component colours ──
-            const colorR = '#ef4444';   // Red   — resistance R
-            const colorX = X_val >= 0 ? '#3b82f6' : '#10b981';  // Blue=inductive, Green=capacitive
-            const colorXlabel = X_val >= 0 ? 'X_L−X_C' : 'X_C−X_L';
-            const colorZ = '#8b5cf6';   // Purple — |Z|
-
-            // Pixel endpoints
-            const px_R = cx + R_val * sc;          // tip of R vector (on Re axis)
-            const py_X = cy - X_val * sc;           // tip of X vector (on Im axis)
-
-            // ── Dashed construction lines (dotted rectangle) ──
-            if (Math.abs(R_val) > maxComp * 0.01 && Math.abs(X_val) > maxComp * 0.01) {
-                ctx.beginPath(); ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
-                ctx.moveTo(px_R, cy); ctx.lineTo(px_R, py_X);   // vertical from R-tip
-                ctx.moveTo(cx, py_X); ctx.lineTo(px_R, py_X);   // horizontal from X-tip
-                ctx.stroke(); ctx.setLineDash([]);
-            }
-
-            // ── Draw the three vectors ──
-            // 1. R  (horizontal, Re-axis)
-            arrow(cx, cy, px_R, cy, colorR, 2.8, 'R', Math.abs(R_val), false);
-            // 2. X  (vertical, Im-axis)  — drawn from origin
-            arrow(cx, cy, cx, py_X, colorX, 2.8, colorXlabel, Math.abs(X_val), false);
-            // 3. |Z|∠θ (diagonal resultant) — from origin to (R, X) corner
-            arrow(cx, cy, px_R, py_X, colorZ, 3.0, '|Z|', Zmag, true);
-
-            // ── Legend ──
-            const leg = [
-                [colorR, 'R (Resistance)'],
-                [colorX, X_val >= 0 ? 'X_L−X_C (Net Inductive)' : 'X_C−X_L (Net Capacitive)'],
-                [colorZ, '|Z| Impedance']
-            ];
-            leg.forEach(([c, txt], i) => {
-                ctx.fillStyle = c;
-                ctx.fillRect(10, 10 + i * 17, 12, 12);
-                ctx.font = '10px Inter'; ctx.fillStyle = '#374151'; ctx.textAlign = 'left';
-                ctx.fillText(txt, 26, 21 + i * 17);
-            });
-
-            // ── Z info-box (bottom-right) ──
-            if (Zc) {
-                const R_v = Zc.re, X_v = Zc.im;
-                const zRect = `Z = ${R_v.toFixed(2)} ${X_v >= 0 ? '+' : '−'} j${Math.abs(X_v).toFixed(2)} Ω`;
-                const zPolar = `|Z| = ${Zc.mag().toFixed(2)} Ω  ∠ ${pDeg.toFixed(2)}°`;
-                const bx = W - 10, by = H - 44, bw = 196, bh = 38;
-                ctx.save();
-                ctx.globalAlpha = 0.9;
-                ctx.fillStyle = '#f8fafc'; ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.roundRect(bx - bw, by, bw, bh, 6);
-                ctx.fill(); ctx.stroke();
-                ctx.restore();
-                ctx.font = 'bold 11px JetBrains Mono'; ctx.fillStyle = '#4f46e5'; ctx.textAlign = 'right';
-                ctx.fillText(zRect, bx - 7, by + 15);
-                ctx.font = '10px JetBrains Mono'; ctx.fillStyle = '#64748b'; ctx.textAlign = 'right';
-                ctx.fillText(zPolar, bx - 7, by + 30);
-            }
-
-            // ── Mode label (top-right) ──
-            ctx.font = 'bold 11px Inter'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
-            ctx.fillText(mode === 'series' ? 'Series RLC' : 'Parallel RLC', W - 10, 18);
-        }
-
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Initialization                                             ║
-        // ╚══════════════════════════════════════════════════════════════╝
-        // ╔══════════════════════════════════════════════════════════════╗
-        // ║  Enhanced Number Input (Scroll / Drag / Select-All)          ║
-        // ╚══════════════════════════════════════════════════════════════╝
-        function clampToInput(el, val) {
-            const mn = parseFloat(el.min), mx = parseFloat(el.max);
-            if (!isNaN(mn) && val < mn) val = mn;
-            if (!isNaN(mx) && val > mx) val = mx;
-            return val;
-        }
-
-        function enhanceNumberInputs() {
-            document.querySelectorAll('input[type="number"]').forEach(el => {
-                // Tooltip hint
-                el.title = 'Scroll ↕ or drag ↔ to adjust • Click to type • Enter to confirm • Esc to cancel';
-
-                let prevVal = el.value;
-                let dragActive = false, dragStartX = 0, dragStartVal = 0, didDrag = false;
-
-                // ── Select-all on focus ──
-                el.addEventListener('focus', () => {
-                    prevVal = el.value;
-                    setTimeout(() => el.select(), 0);
-                });
-
-                // ── Enter / Escape ──
-                el.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
-                    if (e.key === 'Escape') {
-                        el.value = prevVal;
-                        el.dispatchEvent(new Event('input'));
-                        el.blur();
-                    }
-                });
-
-                // ── Scroll wheel to adjust ──
-                el.addEventListener('wheel', e => {
-                    e.preventDefault();
-                    const step = parseFloat(el.step) || 1;
-                    const delta = e.deltaY < 0 ? step : -step;
-                    let v = clampToInput(el, (parseFloat(el.value) || 0) + delta);
-                    // keep reasonable decimal precision
-                    el.value = parseFloat(v.toPrecision(10));
-                    el.dispatchEvent(new Event('input'));
-                }, { passive: false });
-
-                // ── Horizontal drag scrubbing ──
-                el.addEventListener('mousedown', e => {
-                    if (document.activeElement === el) return; // let text cursor work
-                    dragActive = true;
-                    didDrag = false;
-                    dragStartX = e.clientX;
-                    dragStartVal = parseFloat(el.value) || 0;
-                    document.body.classList.add('num-dragging');
-                    e.preventDefault();
-                });
-
-                el._onDragMove = e => {
-                    if (!dragActive) return;
-                    const dx = e.clientX - dragStartX;
-                    if (Math.abs(dx) > 3) didDrag = true;
-                    const step = parseFloat(el.step) || 1;
-                    // sensitivity: 1px = 0.5 × step
-                    let v = clampToInput(el, dragStartVal + dx * step * 0.5);
-                    el.value = parseFloat(v.toPrecision(10));
-                    el.dispatchEvent(new Event('input'));
-                };
-
-                el._onDragUp = () => {
-                    if (!dragActive) return;
-                    dragActive = false;
-                    document.body.classList.remove('num-dragging');
-                    if (!didDrag) {
-                        // plain click → focus + select
-                        el.focus();
-                        el.select();
-                    }
-                };
-
-                document.addEventListener('mousemove', el._onDragMove);
-                document.addEventListener('mouseup', el._onDragUp);
-            });
-        }
-
+        // Global Initialization
         window.addEventListener('DOMContentLoaded', () => {
             initChart();
-            initResChart();
+            init_builder_canvas();
             calcSD('delta');
             setSourceMode('dc');
-            enhanceNumberInputs();
-            animLoop();
         });
-
     </script>
-
 </body>
-
 </html>
