@@ -155,9 +155,40 @@
         }
 
         #circuit { display: block; }
-        .component { cursor: grab; }
+        .component {
+            cursor: grab;
+            transition: filter 0.15s ease;
+        }
+        .component:hover {
+            filter: drop-shadow(0 4px 10px rgba(79, 70, 229, 0.25));
+        }
+        .component:active, .component.component-dragging {
+            cursor: grabbing;
+            filter: drop-shadow(0 10px 20px rgba(79, 70, 229, 0.45));
+        }
+        .component.component-selected {
+            filter: drop-shadow(0 0 0 2px #6366f1) drop-shadow(0 4px 16px rgba(99, 102, 241, 0.55));
+            outline: none;
+        }
+        .component-delete-btn {
+            cursor: pointer;
+            pointer-events: all;
+        }
+        #circuit-map.drag-over {
+            border-color: #6366f1 !important;
+            box-shadow: inset 0 0 0 2px #6366f1, 0 0 20px rgba(99, 102, 241, 0.35) !important;
+        }
+        #drag-ghost {
+            box-shadow: 0 20px 30px -5px rgba(79, 70, 229, 0.35), 0 10px 15px -5px rgba(0, 0, 0, 0.15);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
 
-        .component:active { cursor: grabbing; }
+        .component-box, #component-tool-list, #circuit-map, #circuit, #drag-ghost {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
 
         .component-box {
             display: flex;
@@ -177,6 +208,11 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         }
         .component-box:active { cursor: grabbing; background: #e2e8f0; }
+        .component-box.selected-tool {
+            border-color: #4f46e5 !important;
+            background: #eef2ff !important;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4) !important;
+        }
         .component-box.absent { display: none !important; }
 
         .component-tool-icon {
@@ -245,6 +281,56 @@
             backdrop-filter: blur(12px);
             border: 1px solid rgba(226, 232, 240, 0.8);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* ── ENHANCED TERMINAL SNAP & WIRING UX STYLES ── */
+        .node {
+            cursor: pointer;
+            transition: r 0.15s ease, fill 0.15s ease, stroke 0.15s ease, filter 0.15s ease;
+        }
+        .node:hover, .node-hitbox:hover + .node {
+            r: 6px !important;
+            fill: #6366f1 !important;
+            stroke: #ffffff !important;
+            stroke-width: 2.5px !important;
+            filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.9));
+        }
+        .node-hitbox {
+            cursor: pointer;
+            fill: transparent;
+            pointer-events: all;
+        }
+        .snap-ring {
+            fill: rgba(16, 185, 129, 0.2);
+            stroke: #10b981;
+            stroke-width: 2.5;
+            stroke-dasharray: 4, 3;
+            animation: snapRingPulse 1s infinite linear;
+            pointer-events: none;
+        }
+        @keyframes snapRingPulse {
+            0% { transform: scale(0.95); opacity: 1; }
+            50% { transform: scale(1.18); opacity: 0.8; }
+            100% { transform: scale(0.95); opacity: 1; }
+        }
+        .wire-group {
+            cursor: pointer;
+        }
+        .wire-hitbox {
+            stroke: transparent;
+            stroke-width: 16px;
+            pointer-events: stroke;
+            cursor: pointer;
+        }
+        .wire-line {
+            stroke-width: 3px;
+            pointer-events: none;
+            transition: stroke 0.15s ease, stroke-width 0.15s ease, filter 0.15s ease;
+        }
+        .wire-group:hover .wire-line {
+            stroke: #ef4444 !important;
+            stroke-width: 4.5px !important;
+            filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.7));
         }
     </style>
 </head>
@@ -747,6 +833,9 @@
                         <g id="simulation-overlay"></g>
                         <g id="component-labels"></g>
                         <g id="multimeter-probes"></g>
+                        <g id="snap-layer">
+                            <circle id="snap-indicator" cx="-100" cy="-100" r="14" class="snap-ring hidden" />
+                        </g>
                     </svg>
                     <div id="component-selection-area" class="hidden"></div>
                     <div id="circuit-overlay" class="absolute bottom-3 right-3 glass-panel px-3 py-1.5 rounded-lg text-xs font-mono text-gray-600">
@@ -819,6 +908,14 @@
                 <button id="dialog-save" onclick="save_component_dialog()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow">💾 Save Changes</button>
             </div>
         </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- DRAG GHOST FLOATING ELEMENT FOR CURSOR PREVIEW             -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="drag-ghost" class="fixed pointer-events-none z-[9999] hidden -translate-x-1/2 -translate-y-1/2 p-2.5 bg-white/95 backdrop-blur-md border-2 border-indigo-500/80 rounded-2xl shadow-2xl transition-transform duration-75 flex flex-col items-center gap-1">
+        <div id="drag-ghost-svg" class="w-16 h-16 flex items-center justify-center"></div>
+        <div id="drag-ghost-label" class="text-[11px] font-bold text-indigo-900 text-center font-mono"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
@@ -1040,14 +1137,110 @@
             zener_diode:         { label: "Zener Diode", simulatable: false }
         };
 
+        // ── ENHANCED WIRING UX & SNAP HELPERS ──
+        function snap_to_grid(val, grid_size = 20) {
+            return Math.round(val / grid_size) * grid_size;
+        }
+
+        function get_nearest_node(pt, radius = 30, excludeId = null) {
+            let closest = null;
+            let minDist = radius;
+            for (const n of node_list) {
+                if (n.id === excludeId) continue;
+                const dx = n.position.x - pt.x;
+                const dy = n.position.y - pt.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = n;
+                }
+            }
+            return closest;
+        }
+
+        function create_connection_element(conn) {
+            const n1 = get_node_by_id(conn.node_1_id);
+            const n2 = get_node_by_id(conn.node_2_id);
+            if (!n1 || !n2) return;
+
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute("id", conn.id);
+            g.setAttribute("class", "wire-group");
+            g.setAttribute("title", "คลิกหรือคลิกขวาเพื่อลบสายไฟ");
+
+            const hitbox = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            hitbox.setAttribute("class", "wire-hitbox");
+            hitbox.setAttribute("x1", n1.position.x); hitbox.setAttribute("y1", n1.position.y);
+            hitbox.setAttribute("x2", n2.position.x); hitbox.setAttribute("y2", n2.position.y);
+
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("class", "wire-line");
+            line.setAttribute("stroke", conn.connector_colour || "#475569");
+            line.setAttribute("stroke-width", "3");
+            line.setAttribute("x1", n1.position.x); line.setAttribute("y1", n1.position.y);
+            line.setAttribute("x2", n2.position.x); line.setAttribute("y2", n2.position.y);
+
+            g.appendChild(hitbox);
+            g.appendChild(line);
+
+            g.addEventListener("click", (e) => {
+                if (app_mode !== "pan" && !active_drag && !active_connect) {
+                    e.stopPropagation();
+                    delete_connection(conn.id);
+                }
+            });
+            g.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                delete_connection(conn.id);
+            });
+
+            document.getElementById("connections").appendChild(g);
+            connection_list.push(conn);
+        }
+
+        function delete_connection(conn_id) {
+            const idx = connection_list.findIndex(c => c.id === conn_id);
+            if (idx !== -1) {
+                connection_list.splice(idx, 1);
+            }
+            const el = document.getElementById(conn_id);
+            if (el && el.parentNode) {
+                el.parentNode.removeChild(el);
+            }
+            if (simulation_active) run_circuit_simulation();
+        }
+
+        function finish_active_connection(target_node_param = null) {
+            if (!active_connect) return;
+            const snapIndicator = document.getElementById("snap-indicator");
+            if (snapIndicator) snapIndicator.classList.add("hidden");
+
+            const target_node = target_node_param || active_connect.target_node;
+
+            if (active_connect.line && active_connect.line.parentNode) {
+                active_connect.line.parentNode.removeChild(active_connect.line);
+            }
+
+            if (target_node && target_node.id !== active_connect.connection.node_1_id) {
+                active_connect.connection.node_2_id = target_node.id;
+                active_connect.connection.component_2_id = target_node.base_component_id;
+                create_connection_element(active_connect.connection);
+                if (simulation_active) run_circuit_simulation();
+            }
+            active_connect = null;
+        }
 
         let component_counter = 0, node_counter = 0, connection_counter = 0;
         let component_list = [], node_list = [], connection_list = [];
         let mouse_x = 0, mouse_y = 0;
         let selected_component_tool = null;
+        let is_dragging_from_sidebar = false;
+        let dragged_tool_name = null;
         let app_mode = "select", zoom_level = 1.0, pan_offset_x = 0, pan_offset_y = 0;
         let active_drag = null, active_connect = null;
         let circuit_moving = false, circuit_selecting = false;
+        let selected_component_id = null;
         let canvas_initial_pos = new Coordinate(0, 0);
         const circuit_default_dimension = new Dimension(2000, 1500);
 
@@ -1057,7 +1250,8 @@
         function mouse_to_svg(e) {
             const svg = document.getElementById("circuit");
             const pt = svg.createSVGPoint();
-            pt.x = e.clientX; pt.y = e.clientY;
+            pt.x = e.touches ? e.touches[0].clientX : e.clientX;
+            pt.y = e.touches ? e.touches[0].clientY : e.clientY;
             const ctm = svg.getScreenCTM();
             return ctm ? pt.matrixTransform(ctm.inverse()) : pt;
         }
@@ -1095,81 +1289,267 @@
             return value.toExponential(2) + " " + unit;
         }
 
+        function set_active_tool(img, name, titleText) {
+            selected_component_tool = img;
+            const boxes = document.querySelectorAll(".component-box");
+            boxes.forEach(b => {
+                const bImg = b.querySelector(".component-tool");
+                const bName = bImg ? bImg.getAttribute("alt") : null;
+                if (bName === name && img) {
+                    b.classList.add("selected-tool");
+                } else {
+                    b.classList.remove("selected-tool");
+                }
+            });
+
+            const ghost = document.getElementById("drag-ghost");
+            const ghostSvg = document.getElementById("drag-ghost-svg");
+            const ghostLabel = document.getElementById("drag-ghost-label");
+
+            if (img && name && ghost && ghostSvg) {
+                ghostSvg.innerHTML = `<svg width="60" height="60" viewBox="0 0 100 100">${get_component_svg_data(name)}</svg>`;
+                if (ghostLabel) ghostLabel.textContent = titleText || name;
+                ghost.style.display = "";
+                ghost.classList.remove("hidden");
+            } else if (ghost) {
+                ghost.classList.add("hidden");
+                ghost.style.display = "none";
+            }
+        }
+
+        function clear_active_tool() {
+            selected_component_tool = null;
+            dragged_tool_name = null;
+            is_dragging_from_sidebar = false;
+            const boxes = document.querySelectorAll(".component-box");
+            boxes.forEach(b => b.classList.remove("selected-tool"));
+            const ghost = document.getElementById("drag-ghost");
+            if (ghost) {
+                ghost.classList.add("hidden");
+                ghost.style.display = "none";
+            }
+            const circuitMap = document.getElementById("circuit-map");
+            if (circuitMap) circuitMap.classList.remove("drag-over");
+        }
+
         function init_builder_canvas() {
             const circuit = document.getElementById("circuit");
+            const circuitMap = document.getElementById("circuit-map");
             const tools = document.getElementsByClassName("component-box");
 
             for (let i = 0; i < tools.length; i++) {
-                tools[i].addEventListener("mousedown", (e) => {
-                    const img = tools[i].querySelector(".component-tool");
-                    if (img) selected_component_tool = img;
+                const box = tools[i];
+                const img = box.querySelector(".component-tool");
+                const titleEl = box.querySelector("h4");
+                const name = img ? img.getAttribute("alt") : null;
+
+                if (!name) continue;
+
+                box.addEventListener("dragstart", (e) => e.preventDefault());
+
+                const handleDragStart = (e) => {
+                    if (e.cancelable) e.preventDefault();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                    is_dragging_from_sidebar = true;
+                    dragged_tool_name = name;
+                    set_active_tool(img, name, titleEl ? titleEl.textContent : name);
+
+                    const ghost = document.getElementById("drag-ghost");
+                    if (ghost) {
+                        ghost.style.left = clientX + "px";
+                        ghost.style.top = clientY + "px";
+                    }
+                };
+
+                box.addEventListener("mousedown", handleDragStart);
+                box.addEventListener("touchstart", handleDragStart, { passive: false });
+            }
+
+            if (circuitMap) {
+                circuitMap.addEventListener("contextmenu", (e) => {
+                    if (selected_component_tool || dragged_tool_name || is_dragging_from_sidebar) {
+                        e.preventDefault();
+                        clear_active_tool();
+                    }
                 });
             }
 
+            const searchBox = document.getElementById("component-search-text-box");
+            if (searchBox) {
+                searchBox.addEventListener("input", (e) => {
+                    const q = e.target.value.toLowerCase().trim();
+                    const boxes = document.querySelectorAll(".component-box");
+                    boxes.forEach(b => {
+                        const txt = b.textContent.toLowerCase();
+                        b.classList.toggle("absent", q !== "" && !txt.includes(q));
+                    });
+                });
+            }
+
+            const handleGlobalMove = (e) => {
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                const ghost = document.getElementById("drag-ghost");
+
+                if ((is_dragging_from_sidebar || selected_component_tool) && ghost) {
+                    ghost.style.left = clientX + "px";
+                    ghost.style.top = clientY + "px";
+                    ghost.style.display = "";
+                    ghost.classList.remove("hidden");
+
+                    if (circuitMap) {
+                        const rect = circuitMap.getBoundingClientRect();
+                        const isOverCanvas = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+                        circuitMap.classList.toggle("drag-over", isOverCanvas);
+                    }
+                } else if (ghost) {
+                    ghost.classList.add("hidden");
+                    ghost.style.display = "none";
+                    if (circuitMap) circuitMap.classList.remove("drag-over");
+                }
+
+                if (active_drag) {
+                    const svg = document.getElementById("circuit");
+                    const pt = svg.createSVGPoint();
+                    pt.x = clientX; pt.y = clientY;
+                    const ctm = svg.getScreenCTM();
+                    const svgPt = ctm ? pt.matrixTransform(ctm.inverse()) : pt;
+
+                    const dx = svgPt.x - active_drag.start_pos[0];
+                    const dy = svgPt.y - active_drag.start_pos[1];
+
+                    move_component(active_drag.component_id, new Coordinate(dx, dy));
+                    active_drag.start_pos = [svgPt.x, svgPt.y];
+
+                    const coordsEl = document.getElementById("overlay-coords");
+                    if (coordsEl) coordsEl.textContent = `${Math.round(svgPt.x)}, ${Math.round(svgPt.y)}`;
+                }
+
+                if (active_connect) {
+                    const pt = mouse_to_svg(e);
+                    const snapNode = get_nearest_node(pt, 30, active_connect.connection.node_1_id);
+                    const snapIndicator = document.getElementById("snap-indicator");
+
+                    if (snapNode) {
+                        active_connect.line.setAttribute("x2", snapNode.position.x);
+                        active_connect.line.setAttribute("y2", snapNode.position.y);
+                        active_connect.target_node = snapNode;
+
+                        if (snapIndicator) {
+                            snapIndicator.setAttribute("cx", snapNode.position.x);
+                            snapIndicator.setAttribute("cy", snapNode.position.y);
+                            snapIndicator.classList.remove("hidden");
+                        }
+                    } else {
+                        active_connect.line.setAttribute("x2", pt.x);
+                        active_connect.line.setAttribute("y2", pt.y);
+                        active_connect.target_node = null;
+
+                        if (snapIndicator) snapIndicator.classList.add("hidden");
+                    }
+                }
+
+                if (circuit_moving) {
+                    const dx = clientX - canvas_initial_pos.x;
+                    const dy = clientY - canvas_initial_pos.y;
+                    pan_offset_x -= dx / zoom_level;
+                    pan_offset_y -= dy / zoom_level;
+                    canvas_initial_pos.x = clientX; canvas_initial_pos.y = clientY;
+                    update_viewbox();
+                }
+            };
+
+            window.addEventListener("mousemove", handleGlobalMove);
+            window.addEventListener("touchmove", handleGlobalMove, { passive: true });
+
+            const handleGlobalUp = (e) => {
+                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+
+                if (circuitMap) circuitMap.classList.remove("drag-over");
+
+                if (is_dragging_from_sidebar && dragged_tool_name) {
+                    if (circuitMap) {
+                        const rect = circuitMap.getBoundingClientRect();
+                        if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                            const svg = document.getElementById("circuit");
+                            const pt = svg.createSVGPoint();
+                            pt.x = clientX; pt.y = clientY;
+                            const ctm = svg.getScreenCTM();
+                            const svgPt = ctm ? pt.matrixTransform(ctm.inverse()) : pt;
+
+                            const snapX = snap_to_grid(svgPt.x - 50);
+                            const snapY = snap_to_grid(svgPt.y - 50);
+                            create_component_on_canvas(dragged_tool_name, snapX, snapY);
+                            if (simulation_active) run_circuit_simulation();
+                        }
+                    }
+                    clear_active_tool();
+                }
+
+                if (active_drag) {
+                    const g = document.getElementById(active_drag.component_id);
+                    if (g) g.classList.remove("component-dragging");
+                    active_drag = null;
+                    if (simulation_active) run_circuit_simulation();
+                }
+
+                if (active_connect) {
+                    const pt = mouse_to_svg(e);
+                    let target_node = active_connect.target_node || get_nearest_node(pt, 30, active_connect.connection.node_1_id);
+
+                    if (target_node) {
+                        finish_active_connection(target_node);
+                    } else if (Date.now() - (active_connect.start_time || 0) > 250) {
+                        finish_active_connection(null);
+                    }
+                }
+
+                if (circuit_moving) circuit_moving = false;
+            };
+
+            window.addEventListener("mouseup", handleGlobalUp);
+            window.addEventListener("touchend", handleGlobalUp, { passive: true });
+
+            window.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    if (active_connect) finish_active_connection(null);
+                    clear_active_tool();
+                    deselect_component();
+                }
+                if ((e.key === "Delete" || e.key === "Backspace") && selected_component_id) {
+                    // Don't delete if user is typing in an input
+                    if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) return;
+                    e.preventDefault();
+                    delete_component(selected_component_id);
+                }
+            });
+
             circuit.addEventListener("mousedown", (e) => {
+                if (e.cancelable) e.preventDefault();
                 const pt = mouse_to_svg(e);
                 mouse_x = pt.x; mouse_y = pt.y;
 
-                if (selected_component_tool) {
-                    const name = selected_component_tool.getAttribute("alt");
-                    create_component_on_canvas(name, mouse_x - 50, mouse_y - 50);
-                    selected_component_tool = null;
+                if (selected_component_tool || dragged_tool_name) {
+                    const name = dragged_tool_name || (selected_component_tool ? selected_component_tool.getAttribute("alt") : null);
+                    if (name) {
+                        create_component_on_canvas(name, snap_to_grid(mouse_x - 50), snap_to_grid(mouse_y - 50));
+                        if (simulation_active) run_circuit_simulation();
+                    }
+                    clear_active_tool();
                     return;
                 }
 
                 if (e.target.getAttribute("id") === "circuit") {
+                    if (active_connect) {
+                        finish_active_connection(null);
+                    }
                     canvas_initial_pos.x = e.clientX; canvas_initial_pos.y = e.clientY;
                     if (app_mode === "pan" || e.button === 2 || e.button === 1) circuit_moving = true;
                 }
-            });
-
-            circuit.addEventListener("mousemove", (e) => {
-                const pt = mouse_to_svg(e);
-                if (circuit_moving) {
-                    const dx = e.clientX - canvas_initial_pos.x;
-                    const dy = e.clientY - canvas_initial_pos.y;
-                    pan_offset_x -= dx / zoom_level;
-                    pan_offset_y -= dy / zoom_level;
-                    canvas_initial_pos.x = e.clientX; canvas_initial_pos.y = e.clientY;
-                    update_viewbox();
-                }
-                mouse_x = pt.x; mouse_y = pt.y;
-
-                if (active_connect) {
-                    active_connect.line.setAttribute("x2", mouse_x);
-                    active_connect.line.setAttribute("y2", mouse_y);
-                }
-
-                if (active_drag) {
-                    const dx = mouse_x - active_drag.start_pos[0];
-                    const dy = mouse_y - active_drag.start_pos[1];
-                    move_component(active_drag.component_id, new Coordinate(dx, dy));
-                    active_drag.start_pos = [mouse_x, mouse_y];
-                }
-                document.getElementById("overlay-coords").textContent = `${Math.round(mouse_x)}, ${Math.round(mouse_y)}`;
-            });
-
-            circuit.addEventListener("mouseup", (e) => {
-                if (active_connect) {
-                    if (e.target.classList.contains("node")) {
-                        const target_node = get_node_by_id(e.target.getAttribute("id"));
-                        if (target_node) {
-                            active_connect.connection.node_2_id = target_node.id;
-                            active_connect.connection.component_2_id = target_node.base_component_id;
-                            active_connect.line.setAttribute("x2", target_node.position.x);
-                            active_connect.line.setAttribute("y2", target_node.position.y);
-                            connection_list.push(active_connect.connection);
-                        } else {
-                            document.getElementById("connections").removeChild(active_connect.line);
-                        }
-                    } else {
-                        const g = document.getElementById("connections");
-                        if (active_connect.line.parentNode === g) g.removeChild(active_connect.line);
-                    }
-                    active_connect = null;
-                }
-                if (active_drag) active_drag = null;
-                if (circuit_moving) circuit_moving = false;
             });
         }
 
@@ -1186,7 +1566,7 @@
             set_component_values(comp, comp_g);
             component_list.push(comp);
             document.getElementById("circuit").appendChild(comp_g);
-            move_component(comp.id, new Coordinate(x, y));
+            comp_g.setAttribute("transform", `translate(${comp.base_point.x},${comp.base_point.y})`);
             register_component_events(comp_g);
             update_component_label(comp.id);
             return comp;
@@ -1200,6 +1580,9 @@
             document.getElementById("simulation-overlay").innerHTML = "";
             document.getElementById("component-labels").innerHTML = "";
             document.getElementById("multimeter-probes").innerHTML = "";
+            const snapIndicator = document.getElementById("snap-indicator");
+            if (snapIndicator) snapIndicator.classList.add("hidden");
+
             const circuit = document.getElementById("circuit");
             const comps = Array.from(circuit.querySelectorAll(".component"));
             comps.forEach(c => circuit.removeChild(c));
@@ -1270,62 +1653,151 @@
             const n2 = get_node_by_id(n2_id);
             if (!n1 || !n2) return;
             const conn = new Connection(n1_id, n1.base_component_id, n2_id, n2.base_component_id);
-            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("id", conn.id);
-            line.setAttribute("stroke", "#475569");
-            line.setAttribute("stroke-width", "3");
-            line.setAttribute("x1", n1.position.x); line.setAttribute("y1", n1.position.y);
-            line.setAttribute("x2", n2.position.x); line.setAttribute("y2", n2.position.y);
-            document.getElementById("connections").appendChild(line);
-            connection_list.push(conn);
+            create_connection_element(conn);
         }
 
+        function select_component(comp_id) {
+            deselect_component();
+            selected_component_id = comp_id;
+            const g = document.getElementById(comp_id);
+            if (g) g.classList.add("component-selected");
+        }
 
+        function deselect_component() {
+            if (selected_component_id) {
+                const g = document.getElementById(selected_component_id);
+                if (g) g.classList.remove("component-selected");
+            }
+            selected_component_id = null;
+        }
+
+        function delete_component(comp_id) {
+            // Remove all connections linked to this component
+            const connIds = connection_list
+                .filter(c => c.component_1_id === comp_id || c.component_2_id === comp_id)
+                .map(c => c.id);
+            connIds.forEach(cid => delete_connection(cid));
+
+            // Remove nodes
+            const comp = get_component_by_id(comp_id);
+            if (comp) {
+                comp.nodes.forEach(n => {
+                    const idx = node_list.findIndex(nd => nd.id === n.node_id);
+                    if (idx !== -1) node_list.splice(idx, 1);
+                });
+            }
+
+            // Remove from component_list
+            const cidx = component_list.findIndex(c => c.id === comp_id);
+            if (cidx !== -1) component_list.splice(cidx, 1);
+
+            // Remove SVG element
+            const g = document.getElementById(comp_id);
+            if (g && g.parentNode) g.parentNode.removeChild(g);
+
+            // Remove label
+            const lbl = document.getElementById("lbl_" + comp_id);
+            if (lbl && lbl.parentNode) lbl.parentNode.removeChild(lbl);
+
+            deselect_component();
+            if (simulation_active) run_circuit_simulation();
+        }
 
         function register_component_events(comp_g) {
+            const comp_id = comp_g.getAttribute("id");
+
+            // Right-click → delete
+            comp_g.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                delete_component(comp_id);
+            });
+
             comp_g.addEventListener("mousedown", (e) => {
+                if (is_dragging_from_sidebar && (selected_component_tool || dragged_tool_name)) {
+                    const pt = mouse_to_svg(e);
+                    const name = dragged_tool_name || (selected_component_tool ? selected_component_tool.getAttribute("alt") : null);
+                    if (name) {
+                        create_component_on_canvas(name, snap_to_grid(pt.x - 50), snap_to_grid(pt.y - 50));
+                        if (simulation_active) run_circuit_simulation();
+                    }
+                    clear_active_tool();
+                    e.stopPropagation();
+                    return;
+                }
+
                 if (app_mode === "measure" && multimeter_mode === "voltmeter") {
                     handle_multimeter_node_click(e); return;
                 }
                 const pt = mouse_to_svg(e);
                 mouse_x = pt.x; mouse_y = pt.y;
 
-                if (e.target.classList.contains("node") && app_mode !== "pan") {
-                    const conn = new Connection("", comp_g.getAttribute("id"), "", "");
-                    conn.node_1_id = e.target.getAttribute("id");
-                    const n1 = get_node_by_id(conn.node_1_id);
+                const nodeEl = e.target.closest(".node, .node-hitbox");
+                if (nodeEl && app_mode !== "pan") {
+                    let nodeId = nodeEl.getAttribute("data-node-id") || nodeEl.getAttribute("id");
+                    if (nodeId && nodeId.startsWith("hb_")) nodeId = nodeId.replace("hb_", "");
 
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("stroke", "#475569"); line.setAttribute("stroke-width", "3");
-                    line.setAttribute("x1", n1 ? n1.position.x : mouse_x);
-                    line.setAttribute("y1", n1 ? n1.position.y : mouse_y);
-                    line.setAttribute("x2", mouse_x); line.setAttribute("y2", mouse_y);
-                    document.getElementById("connections").appendChild(line);
-                    active_connect = { connection: conn, line: line };
+                    if (active_connect) {
+                        const targetNode = get_node_by_id(nodeId);
+                        finish_active_connection(targetNode);
+                    } else {
+                        const conn = new Connection("", comp_id, "", "");
+                        conn.node_1_id = nodeId;
+                        const n1 = get_node_by_id(conn.node_1_id);
+
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("stroke", "#475569"); line.setAttribute("stroke-width", "3");
+                        line.setAttribute("stroke-dasharray", "5,3");
+                        line.setAttribute("x1", n1 ? n1.position.x : mouse_x);
+                        line.setAttribute("y1", n1 ? n1.position.y : mouse_y);
+                        line.setAttribute("x2", mouse_x); line.setAttribute("y2", mouse_y);
+                        document.getElementById("connections").appendChild(line);
+
+                        active_connect = { connection: conn, line: line, start_time: Date.now(), target_node: null };
+                    }
                     e.stopPropagation();
                 } else if (app_mode !== "pan" && e.button === 0) {
-                    active_drag = { component_id: comp_g.getAttribute("id"), start_pos: [mouse_x, mouse_y] };
+                    if (active_connect) {
+                        finish_active_connection(null);
+                    }
+                    // Select and start drag
+                    select_component(comp_id);
+                    active_drag = { component_id: comp_id, start_pos: [mouse_x, mouse_y] };
+                    comp_g.classList.add("component-dragging");
                     e.stopPropagation();
                 }
             });
 
             comp_g.addEventListener("dblclick", (e) => {
                 e.stopPropagation();
-                show_component_dialog(comp_g.getAttribute("id"));
+                show_component_dialog(comp_id);
             });
         }
 
         function move_component(comp_id, delta) {
             const comp = get_component_by_id(comp_id);
             if (!comp) return;
-            comp.base_point.x += delta.x; comp.base_point.y += delta.y;
+
+            const newX = snap_to_grid(comp.base_point.x + delta.x);
+            const newY = snap_to_grid(comp.base_point.y + delta.y);
+
+            const dx = newX - comp.base_point.x;
+            const dy = newY - comp.base_point.y;
+
+            // Always update transform, skip node/wire update only if no movement
+            comp.base_point.x = newX;
+            comp.base_point.y = newY;
+
             const g = document.getElementById(comp_id);
             if (g) g.setAttribute("transform", `translate(${comp.base_point.x},${comp.base_point.y})`);
+
+            if (dx === 0 && dy === 0) return;
 
             for (const n of comp.nodes) {
                 const node_obj = get_node_by_id(n.node_id);
                 if (node_obj) {
-                    node_obj.position.x += delta.x; node_obj.position.y += delta.y;
+                    node_obj.position.x += dx;
+                    node_obj.position.y += dy;
                 }
             }
             move_component_connections(comp_id);
@@ -1333,14 +1805,21 @@
 
         function move_component_connections(comp_id) {
             for (const conn of connection_list) {
-                const line = document.getElementById(conn.id);
+                const wireGroup = document.getElementById(conn.id);
+                if (!wireGroup) continue;
+                const lines = wireGroup.querySelectorAll("line");
+
                 if (conn.component_1_id === comp_id) {
                     const n = get_node_by_id(conn.node_1_id);
-                    if (n && line) { line.setAttribute("x1", n.position.x); line.setAttribute("y1", n.position.y); }
+                    if (n) {
+                        lines.forEach(l => { l.setAttribute("x1", n.position.x); l.setAttribute("y1", n.position.y); });
+                    }
                 }
                 if (conn.component_2_id === comp_id) {
                     const n = get_node_by_id(conn.node_2_id);
-                    if (n && line) { line.setAttribute("x2", n.position.x); line.setAttribute("y2", n.position.y); }
+                    if (n) {
+                        lines.forEach(l => { l.setAttribute("x2", n.position.x); l.setAttribute("y2", n.position.y); });
+                    }
                 }
             }
         }
@@ -1349,63 +1828,47 @@
         function get_node_by_id(id) { return node_list.find(n => n.id === id); }
 
         function set_component_values(comp, comp_g) {
-            for (let i = 0; i < comp_g.children.length; i++) {
-                const el = comp_g.children[i];
-                if (el.classList.contains("node")) {
-                    const cx = parseInt(el.getAttribute("cx") || 0);
-                    const cy = parseInt(el.getAttribute("cy") || 0);
-                    const node_obj = new Node(el.classList[1] || "both", new Coordinate(comp.base_point.x + cx, comp.base_point.y + cy), comp.id);
-                    el.setAttribute("id", node_obj.id);
-                    node_list.push(node_obj);
-                    comp.nodes.push(new Component_Node(i, node_obj.id));
+            const visualNodes = Array.from(comp_g.children).filter(el => el.classList.contains("node") && !el.classList.contains("node-hitbox"));
+            const hitboxNodes = Array.from(comp_g.children).filter(el => el.classList.contains("node-hitbox"));
+
+            visualNodes.forEach((el, i) => {
+                const cx = parseInt(el.getAttribute("cx") || 0);
+                const cy = parseInt(el.getAttribute("cy") || 0);
+                const node_obj = new Node(el.classList[1] || "both", new Coordinate(comp.base_point.x + cx, comp.base_point.y + cy), comp.id);
+                el.setAttribute("id", node_obj.id);
+                if (hitboxNodes[i]) {
+                    hitboxNodes[i].setAttribute("id", "hb_" + node_obj.id);
+                    hitboxNodes[i].setAttribute("data-node-id", node_obj.id);
                 }
-            }
+                node_list.push(node_obj);
+                comp.nodes.push(new Component_Node(i, node_obj.id));
+            });
         }
 
-        function update_component_label(comp_id) {
-            const comp = get_component_by_id(comp_id);
-            if (!comp) return;
-            const labels_g = document.getElementById("component-labels");
-            let text_el = document.getElementById("label_" + comp_id);
-            if (!text_el) {
-                text_el = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text_el.setAttribute("id", "label_" + comp_id);
-                text_el.setAttribute("class", "text-xs font-mono font-bold fill-slate-700");
-                labels_g.appendChild(text_el);
-            }
-            text_el.setAttribute("x", comp.base_point.x + 50);
-            text_el.setAttribute("y", comp.base_point.y - 8);
-            text_el.setAttribute("text-anchor", "middle");
-
-            const p = comp.properties;
-            if (comp.name === "resistor") text_el.textContent = format_si_value(p.resistance || 100, "Ω");
-            else if (comp.name === "capacitor") text_el.textContent = format_si_value(p.capacitance || 0.0001, "F");
-            else if (comp.name === "inductor") text_el.textContent = format_si_value(p.inductance || 0.15, "H");
-            else if (comp.name === "dc_power") text_el.textContent = (p.voltage || 12) + " V (DC)";
-            else if (comp.name === "ac_power") text_el.textContent = (p.voltage || 220) + " V (" + (p.frequency || 50) + "Hz)";
-            else text_el.textContent = p.label || comp.name;
+        function make_node_markup(type, cx, cy) {
+            return `<circle class="node-hitbox node ${type}" cx="${cx}" cy="${cy}" r="14" fill="transparent"/><circle class="node ${type}" cx="${cx}" cy="${cy}" r="4" stroke="#475569" stroke-width="1.5" fill="#fff"/>`;
         }
 
         // Inline SVGs for canvas components
         function get_component_svg_data(name) {
             const svgs = {
-                dc_power: '<circle class="node positive" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="45" y2="50" stroke="#000" stroke-width="2.5"/><line x1="45" y1="20" x2="45" y2="80" stroke="#dc2626" stroke-width="3"/><line x1="55" y1="35" x2="55" y2="65" stroke="#2563eb" stroke-width="3"/><line x1="55" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node negative" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                ac_power: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><circle cx="50" cy="50" r="28" stroke="#7c3aed" stroke-width="2.5" fill="#fff"/><path d="M 32,50 q 9,-18 18,0 t 18,0" stroke="#7c3aed" stroke-width="2.5" fill="none"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                ground: '<circle class="node input" cx="50" cy="3" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="50" y1="5" x2="50" y2="50" stroke="#000" stroke-width="2.5"/><line x1="15" y1="50" x2="85" y2="50" stroke="#000" stroke-width="3"/><line x1="25" y1="62" x2="75" y2="62" stroke="#000" stroke-width="2.5"/><line x1="35" y1="74" x2="65" y2="74" stroke="#000" stroke-width="2"/>',
-                resistor: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><polyline points="20,50 25,38 35,62 45,38 55,62 65,38 75,62 80,50" fill="none" stroke="#ef4444" stroke-width="3"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                capacitor: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="40" y2="50" stroke="#000" stroke-width="2.5"/><line x1="40" y1="20" x2="40" y2="80" stroke="#10b981" stroke-width="3.5"/><rect x="41" y="20" width="18" height="60" fill="#fff"/><line x1="60" y1="20" x2="60" y2="80" stroke="#10b981" stroke-width="3.5"/><line x1="60" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                inductor: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="16" y2="50" stroke="#000" stroke-width="2.5"/><path d="M 15,50 a 10,12 0 0 1 25,0 a 10,12 0 0 1 25,0 a 10,12 0 0 1 25,0" fill="none" stroke="#3b82f6" stroke-width="3"/><line x1="85" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                switch: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="30" y2="50" stroke="#000" stroke-width="2.5"/><line x1="30" y1="50" x2="65" y2="25" stroke="#f59e0b" stroke-width="3"/><line x1="70" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                fuse: '<circle class="node both" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><rect x="20" y="40" width="60" height="20" fill="#fff" stroke="#000" stroke-width="2"/><line x1="20" y1="50" x2="80" y2="50" stroke="#d97706" stroke-width="1.5"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node both" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_buffer_gate: '<circle class="node input" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="25" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="25,25 75,50 25,75" fill="#fff" stroke="#000" stroke-width="2.5"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_not_gate: '<circle class="node input" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="20.5" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="20.5,25 70.5,50 20.5,75" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="80.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_or_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="30" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="30" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_nor_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="25" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="25" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 12.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_and_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="22.5" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="22.5" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 22.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="2.5" fill="#fff"/><line x1="77.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_nand_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="17.5" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="17.5" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="77.5" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff" /><line x1="82.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_xor_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="35" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="35" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 22.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><path d="M 17,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="2.5" fill="none"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                binary_xnor_gate: '<circle class="node input" cx="3" cy="37.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="37.5" x2="30" y2="37.5" stroke="#000" stroke-width="2.5"/><circle class="node input" cx="3" cy="62.5" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="62.5" x2="30" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><path d="M 12.5,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="2.5" fill="none"/><circle cx="80" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="85" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>',
-                zener_diode: '<circle class="node input" cx="3" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/><line x1="5" y1="50" x2="25" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="25,25 75,50 25,75" fill="#fff" stroke="#000" stroke-width="2.5"/><polyline points="65,20 75,25 75,75 85,80" fill="none" stroke="#000" stroke-width="2.5"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/><circle class="node output" cx="97" cy="50" r="3" stroke="#000" stroke-width="1.5" fill="#fff"/>'
+                dc_power: `${make_node_markup('positive', 3, 50)}<line x1="5" y1="50" x2="45" y2="50" stroke="#000" stroke-width="2.5"/><line x1="45" y1="20" x2="45" y2="80" stroke="#dc2626" stroke-width="3"/><line x1="55" y1="35" x2="55" y2="65" stroke="#2563eb" stroke-width="3"/><line x1="55" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('negative', 97, 50)}`,
+                ac_power: `${make_node_markup('both', 3, 50)}<line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><circle cx="50" cy="50" r="28" stroke="#7c3aed" stroke-width="2.5" fill="#fff"/><path d="M 32,50 q 9,-18 18,0 t 18,0" stroke="#7c3aed" stroke-width="2.5" fill="none"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('both', 97, 50)}`,
+                ground: `${make_node_markup('input', 50, 3)}<line x1="50" y1="5" x2="50" y2="50" stroke="#000" stroke-width="2.5"/><line x1="15" y1="50" x2="85" y2="50" stroke="#000" stroke-width="3"/><line x1="25" y1="62" x2="75" y2="62" stroke="#000" stroke-width="2.5"/><line x1="35" y1="74" x2="65" y2="74" stroke="#000" stroke-width="2"/>`,
+                resistor: `${make_node_markup('both', 3, 50)}<line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><polyline points="20,50 25,38 35,62 45,38 55,62 65,38 75,62 80,50" fill="none" stroke="#ef4444" stroke-width="3"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('both', 97, 50)}`,
+                capacitor: `${make_node_markup('both', 3, 50)}<line x1="5" y1="50" x2="40" y2="50" stroke="#000" stroke-width="2.5"/><line x1="40" y1="20" x2="40" y2="80" stroke="#10b981" stroke-width="3.5"/><rect x="41" y="20" width="18" height="60" fill="#fff"/><line x1="60" y1="20" x2="60" y2="80" stroke="#10b981" stroke-width="3.5"/><line x1="60" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('both', 97, 50)}`,
+                inductor: `${make_node_markup('both', 3, 50)}<line x1="5" y1="50" x2="16" y2="50" stroke="#000" stroke-width="2.5"/><path d="M 15,50 a 10,12 0 0 1 25,0 a 10,12 0 0 1 25,0 a 10,12 0 0 1 25,0" fill="none" stroke="#3b82f6" stroke-width="3"/><line x1="85" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('both', 97, 50)}`,
+                switch: `${make_node_markup('both', 3, 50)}<line x1="5" y1="50" x2="30" y2="50" stroke="#000" stroke-width="2.5"/><line x1="30" y1="50" x2="65" y2="25" stroke="#f59e0b" stroke-width="3"/><line x1="70" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('both', 97, 50)}`,
+                fuse: `${make_node_markup('both', 3, 50)}<line x1="5" y1="50" x2="20" y2="50" stroke="#000" stroke-width="2.5"/><rect x="20" y="40" width="60" height="20" fill="#fff" stroke="#000" stroke-width="2"/><line x1="20" y1="50" x2="80" y2="50" stroke="#d97706" stroke-width="1.5"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('both', 97, 50)}`,
+                binary_buffer_gate: `${make_node_markup('input', 3, 50)}<line x1="5" y1="50" x2="25" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="25,25 75,50 25,75" fill="#fff" stroke="#000" stroke-width="2.5"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                binary_not_gate: `${make_node_markup('input', 3, 50)}<line x1="5" y1="50" x2="20.5" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="20.5,25 70.5,50 20.5,75" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="80.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                binary_or_gate: `${make_node_markup('input', 3, 37.5)}<line x1="5" y1="37.5" x2="30" y2="37.5" stroke="#000" stroke-width="2.5"/>${make_node_markup('input', 3, 62.5)}<line x1="5" y1="62.5" x2="30" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                binary_nor_gate: `${make_node_markup('input', 3, 37.5)}<line x1="5" y1="37.5" x2="25" y2="37.5" stroke="#000" stroke-width="2.5"/>${make_node_markup('input', 3, 62.5)}<line x1="5" y1="62.5" x2="25" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 12.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="75" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                binary_and_gate: `${make_node_markup('input', 3, 37.5)}<line x1="5" y1="37.5" x2="22.5" y2="37.5" stroke="#000" stroke-width="2.5"/>${make_node_markup('input', 3, 62.5)}<line x1="5" y1="62.5" x2="22.5" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 22.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="2.5" fill="#fff"/><line x1="77.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                binary_nand_gate: `${make_node_markup('input', 3, 37.5)}<line x1="5" y1="37.5" x2="17.5" y2="37.5" stroke="#000" stroke-width="2.5"/>${make_node_markup('input', 3, 62.5)}<line x1="5" y1="62.5" x2="17.5" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 l 30,0 a 25,25 0 0 1 0,50 l -30,0 z" stroke="#000" stroke-width="2.5" fill="#fff"/><circle cx="77.5" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff" /><line x1="82.5" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                binary_xor_gate: `${make_node_markup('input', 3, 37.5)}<line x1="5" y1="37.5" x2="35" y2="37.5" stroke="#000" stroke-width="2.5"/>${make_node_markup('input', 3, 62.5)}<line x1="5" y1="62.5" x2="35" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 22.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><path d="M 17,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="2.5" fill="none"/><line x1="80" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                binary_xnor_gate: `${make_node_markup('input', 3, 37.5)}<line x1="5" y1="37.5" x2="30" y2="37.5" stroke="#000" stroke-width="2.5"/>${make_node_markup('input', 3, 62.5)}<line x1="5" y1="62.5" x2="30" y2="62.5" stroke="#000" stroke-width="2.5"/><path d="M 17.5,25 a 75,55 -25 0 1 57.5,25 a 75,55 25 0 1 -57.5,25 a 15,25 0 0 0 0,-50" stroke="#000" stroke-width="2.5" fill="#fff"/><path d="M 12.5,27.5 a 20,25 0 0 1 0,45" stroke="#000" stroke-width="2.5" fill="none"/><circle cx="80" cy="50" r="5" stroke="#000" stroke-width="2" fill="#fff"/><line x1="85" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`,
+                zener_diode: `${make_node_markup('input', 3, 50)}<line x1="5" y1="50" x2="25" y2="50" stroke="#000" stroke-width="2.5"/><polygon points="25,25 75,50 25,75" fill="#fff" stroke="#000" stroke-width="2.5"/><polyline points="65,20 75,25 75,75 85,80" fill="none" stroke="#000" stroke-width="2.5"/><line x1="75" y1="50" x2="95" y2="50" stroke="#000" stroke-width="2.5"/>${make_node_markup('output', 97, 50)}`
             };
             return svgs[name] || svgs['resistor'];
         }
